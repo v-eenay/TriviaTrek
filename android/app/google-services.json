@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "941720131416",
+    "project_id": "enrichmentquizapp",
+    "storage_bucket": "enrichmentquizapp.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:941720131416:android:244ae946be78242c60772d",
+        "android_client_info": {
+          "package_name": "com.example.quiz_app_enrichment"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCyfYaHkU9-trDt7pWBrI3vPvgLbl57AmQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
