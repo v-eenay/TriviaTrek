@@ -1,70 +1,51 @@
-# Quiz App Documentation (Frontend)
+# TriviaTrek
 
-## Project Overview
+Welcome to TriviaTrek, your ultimate companion for exploring knowledge through quizzes! This project aims to make learning fun and engaging with a variety of quiz categories and insightful user profiles.
 
-### Introduction
-The Quiz App is a Flutter-based mobile application designed to offer an engaging and interactive platform for users to take quizzes on various topics. The front-end is developed using Flutter, ensuring a smooth and responsive user experience.
-
-### Features
-- User Authentication
-- Multiple Choice Questions
-- Timed Quizzes
-- Leaderboards
-- Real-time Results
-- User Profiles
-
-## Project Structure
-
-### Frontend (Flutter)
-- **Language**: Dart
-- **Framework**: Flutter
-- **Dependencies**:
-  - `flutter_bloc`
-  - `http`
-  - `provider`
-  - `shared_preferences`
-  - `flutter_secure_storage`
-
-## Setup and Run
+## How to Run
 
 ### Prerequisites
-- **Flutter SDK**: [Install Flutter](https://flutter.dev/docs/get-started/install)
-- **Dart SDK**: Comes with Flutter
 
-### Frontend Setup
+- Ensure Flutter SDK is installed. Download from [Flutter.dev](https://flutter.dev).
+- Set up an emulator or connect a physical device for testing.
 
-1. **Clone the Repository**
-    ```bash
-    git clone <repository-url>
-    cd quiz_app_flutter
-    ```
+### Clone the Repository
 
-2. **Install Dependencies**
-    ```bash
-    flutter pub get
-    ```
+```bash
+git clone https://github.com/your-username/triviatrek.git
+cd triviatrek
+```
 
-3. **Run the App**
-    ```bash
-    flutter run
-    ```
+### Install Dependencies
 
-## Connecting to Backend
+```bash
+flutter pub get
+```
 
-1. **Update Backend URL in Flutter**
-    - Open `lib/config/constants.dart`
-    - Update `BASE_URL` with your backend server URL
+### Firebase Backend
 
-2. **Test the Connection**
-    - Ensure both frontend and backend are running
-    - Interact with the app to ensure it fetches data from the backend
+TriviaTrek uses Firebase for its backend services:
 
-## License
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+- Authentication: User authentication and management.
+- Firestore: Store user profiles, quiz data, and history.
+- Storage: Store user-uploaded images and other assets.
 
-## Acknowledgements
-- Flutter documentation
-- Community forums and tutorials
+### Run the Application
 
----
-This documentation provides an overview of the project, instructions on how to set it up and run it. For any further questions or issues, please refer to the project's issue tracker or contact the maintainers.
+```bash
+flutter run
+```
+
+### Project Structure
+
+- lib/: Dart source code for the application.
+- screens/: Implementations for different sections like home, categories, leaderboard, profile, etc.
+- models/: Data models for organizing quiz data and user profiles.
+
+### Contributing
+
+Contributions are welcome! Submit issues or pull requests on GitHub.
+
+### Project Status
+
+TriviaTrek is currently in development. We are working hard to bring you a complete and polished application soon. Stay tuned for updates!

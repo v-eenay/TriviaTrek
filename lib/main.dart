@@ -42,7 +42,7 @@ class AuthenticationWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const isSignedIn = false; // Change this to check if user is signed in
+    const isSignedIn = false;
     return isSignedIn ? HomeScreen() : LoginScreen();
   }
 }

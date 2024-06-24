@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:quiz_app_enrichment/screens/categories_screen.dart';
-import 'profile_screen.dart';
-import 'settings_screen.dart';
-import 'highscores_screen.dart';
-import 'leaderboard_screen.dart';
-import 'quiz_screen.dart';
-import 'login_screen.dart';
-import 'quiz_history_screen.dart.dart';
+import 'package:quiz_app_enrichment/screens/profile_screen.dart';
+import 'package:quiz_app_enrichment/screens/settings_screen.dart';
+import 'package:quiz_app_enrichment/screens/highscores_screen.dart';
+import 'package:quiz_app_enrichment/screens/leaderboard_screen.dart';
+import 'package:quiz_app_enrichment/screens/quiz_screen.dart';
+import 'package:quiz_app_enrichment/screens/login_screen.dart';
+import 'package:quiz_app_enrichment/screens/quiz_history_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key});
@@ -19,6 +19,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   String fullName = '';
+  String profilePicture = '';
   bool isLoading = true;
 
   @override
@@ -41,6 +42,7 @@ class _HomeScreenState extends State<HomeScreen> {
         if (snapshot.exists) {
           setState(() {
             fullName = snapshot.data()?['name'] ?? 'User';
+            profilePicture = snapshot.data()?['profilePicture'] ?? '';
             isLoading = false;
           });
         } else {
@@ -86,10 +88,27 @@ class _HomeScreenState extends State<HomeScreen> {
                       _navigateTo(context, ProfileScreen(username: fullName))
                   : null,
               child: Center(
-                child: Text(
-                  fullName,
-                  style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.bold),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 16,
+                      backgroundImage: profilePicture.isNotEmpty
+                          ? NetworkImage(profilePicture)
+                          : null,
+                      child: profilePicture.isEmpty
+                          ? Text(
+                              fullName.isNotEmpty ? fullName[0] : 'U',
+                              style: const TextStyle(fontSize: 24),
+                            )
+                          : null,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      fullName,
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -157,6 +176,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                 _navigateTo(context, const LeaderboardScreen()),
                           ),
                           _buildHomeButton(
+                            title: 'Quiz History',
+                            icon: Icons.history,
+                            backgroundColor: Colors.deepOrange,
+                            onPressed: () =>
+                                _navigateTo(context, const QuizHistoryScreen()),
+                          ),
+                          _buildHomeButton(
                             title: 'Profile',
                             icon: Icons.person,
                             backgroundColor: Colors.purple,
@@ -169,13 +195,6 @@ class _HomeScreenState extends State<HomeScreen> {
                             backgroundColor: Colors.blue,
                             onPressed: () =>
                                 _navigateTo(context, const SettingsScreen()),
-                          ),
-                          _buildHomeButton(
-                            title: 'Quiz History',
-                            icon: Icons.history,
-                            backgroundColor: Colors.deepOrange,
-                            onPressed: () =>
-                                _navigateTo(context, const QuizHistoryScreen()),
                           ),
                         ],
                       ),
@@ -204,9 +223,15 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   CircleAvatar(
                     radius: 30,
-                    backgroundColor: Colors.white,
-                    child:
-                        Icon(Icons.person, size: 40, color: Colors.deepPurple),
+                    backgroundImage: profilePicture.isNotEmpty
+                        ? NetworkImage(profilePicture)
+                        : null,
+                    child: profilePicture.isEmpty
+                        ? Text(
+                            fullName.isNotEmpty ? fullName[0] : 'U',
+                            style: const TextStyle(fontSize: 40),
+                          )
+                        : null,
                   ),
                   const SizedBox(height: 10),
                   Text(
@@ -228,11 +253,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 () => _navigateTo(context, const HighscoresScreen())),
             _buildDrawerItem(context, 'Leaderboard', Icons.leaderboard,
                 () => _navigateTo(context, const LeaderboardScreen())),
+            _buildDrawerItem(context, 'Quiz History', Icons.history,
+                () => _navigateTo(context, const QuizHistoryScreen())),
             _buildDrawerItem(context, 'Profile', Icons.person,
                 () => _navigateTo(context, ProfileScreen(username: fullName))),
+            const Divider(color: Colors.white),
             _buildDrawerItem(context, 'Settings', Icons.settings,
                 () => _navigateTo(context, const SettingsScreen())),
-            const Divider(color: Colors.white),
             _buildDrawerItem(
                 context, 'Logout', Icons.exit_to_app, () => _logout(context)),
           ],

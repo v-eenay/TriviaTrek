@@ -1,9 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:quiz_app_enrichment/screens/categories_screen.dart';
-import 'package:quiz_app_enrichment/screens/highscores_screen.dart';
-import 'package:quiz_app_enrichment/screens/leaderboard_screen.dart';
-import 'settings_screen.dart';
-// import 'package:shared_preferences/shared_preferences.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ProfileScreen extends StatefulWidget {
   final String username;
@@ -15,83 +11,121 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  late Future<UserStats> _userStatsFuture;
+  late String _name;
+  late String _username;
+  late String _email;
+  late String _dob;
+  late String _address;
+  late int _totalQuizzes;
+  late int _totalScore;
+  late double _averageScore;
 
   @override
   void initState() {
     super.initState();
-    _userStatsFuture = _fetchUserStats();
+    _name = '';
+    _username = widget.username;
+    _email = '';
+    _dob = '';
+    _address = '';
+    _totalQuizzes = 0;
+    _totalScore = 0;
+    _averageScore = 0.0;
+
+    // Fetch user data from Firestore
+    _fetchUserData();
   }
 
-  Future<UserStats> _fetchUserStats() async {
-    // Replace with actual implementation to fetch user stats
-    // For demo, using dummy data
-    await Future.delayed(Duration(seconds: 2)); // Simulating delay
-    return UserStats(
-      totalQuizzes: 10,
-      averageScore: 85,
-      highScore: 95,
-    );
+  Future<void> _fetchUserData() async {
+    try {
+      // Fetch user profile data
+      final userData = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(widget.username)
+          .get();
+
+      if (userData.exists) {
+        final data = userData.data() as Map<String, dynamic>;
+        setState(() {
+          _name = data['name'] ?? '';
+          _email = data['email'] ?? '';
+          _dob = data['dob'] ?? '';
+          _address = data['address'] ?? '';
+        });
+
+        // Fetch user's quiz history
+        final quizHistorySnapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(widget.username)
+            .collection('quiz_history')
+            .get();
+
+        int totalScore = 0;
+        int totalQuizzes = quizHistorySnapshot.docs.length;
+
+        quizHistorySnapshot.docs.forEach((doc) {
+          totalScore += (doc['score'] ?? 0) as int;
+        });
+
+        double averageScore =
+            totalQuizzes > 0 ? totalScore / totalQuizzes : 0.0;
+
+        setState(() {
+          _totalQuizzes = totalQuizzes;
+          _totalScore = totalScore;
+          _averageScore = averageScore;
+        });
+      }
+    } catch (e) {
+      print('Error fetching user data: $e');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Profile'),
+        title: Text('Profile'),
         centerTitle: true,
         backgroundColor: Colors.deepPurple,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              _buildProfilePicture(),
-              const SizedBox(height: 16),
-              Text(
-                widget.username,
-                style:
-                    const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            CircleAvatar(
+              radius: 50,
+              backgroundColor: Colors.deepPurple,
+              child: Text(
+                _name.isNotEmpty ? _name[0].toUpperCase() : 'U',
+                style: const TextStyle(
+                  fontSize: 40,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
               ),
-              const SizedBox(height: 8),
-              const Text(
-                'Statistics:',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              FutureBuilder<UserStats>(
-                future: _userStatsFuture,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const CircularProgressIndicator();
-                  } else if (snapshot.hasError) {
-                    return Text('Error: ${snapshot.error}');
-                  } else {
-                    final stats = snapshot.data!;
-                    return Column(
-                      children: [
-                        _buildStatItem(
-                            'Total Quizzes', stats.totalQuizzes.toString()),
-                        _buildStatItem(
-                            'Average Score', '${stats.averageScore}%'),
-                        _buildStatItem('High Score', '${stats.highScore}%'),
-                      ],
-                    );
-                  }
-                },
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () {
-                  // Handle edit profile button click
-                },
-                child: const Text('Edit Profile'),
-              ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              _name,
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '@$_username',
+              style: const TextStyle(fontSize: 18, color: Colors.grey),
+            ),
+            const SizedBox(height: 8),
+            _buildProfileInfoItem('Email', _email),
+            _buildProfileInfoItem('Date of Birth', _dob),
+            _buildProfileInfoItem('Address', _address),
+            _buildProfileInfoItem('Total Quizzes', _totalQuizzes.toString()),
+            _buildProfileInfoItem('Total Score', _totalScore.toString()),
+            _buildProfileInfoItem(
+                'Average Score', _averageScore.toStringAsFixed(2)),
+          ],
         ),
       ),
       bottomNavigationBar: BottomAppBar(
@@ -101,38 +135,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             IconButton(
-              icon: const Icon(Icons.home, color: Colors.white),
+              icon: Icon(Icons.home, color: Colors.white),
               onPressed: () {
                 Navigator.of(context).popUntil((route) => route.isFirst);
               },
             ),
             IconButton(
-              icon: const Icon(Icons.category, color: Colors.white),
+              icon: Icon(Icons.category, color: Colors.white),
               onPressed: () {
-                Navigator.of(context).pushReplacement(MaterialPageRoute(
-                    builder: (context) => CategoriesScreen()));
+                Navigator.of(context).pop();
               },
             ),
             IconButton(
-              icon: const Icon(Icons.star, color: Colors.white),
+              icon: Icon(Icons.star, color: Colors.white),
               onPressed: () {
-                Navigator.of(context).pushReplacement(MaterialPageRoute(
-                    builder: (context) => HighscoresScreen()));
+                Navigator.of(context).pop();
               },
             ),
             IconButton(
-              icon: const Icon(Icons.leaderboard, color: Colors.white),
+              icon: Icon(Icons.leaderboard, color: Colors.white),
               onPressed: () {
-                Navigator.of(context).pushReplacement(MaterialPageRoute(
-                    builder: (context) => LeaderboardScreen()));
+                Navigator.of(context).pop();
               },
             ),
             IconButton(
-              icon: const Icon(Icons.settings, color: Colors.white),
-              onPressed: () {
-                Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(builder: (context) => SettingsScreen()));
-              },
+              icon: const Icon(Icons.person, color: Colors.white),
+              onPressed: () {},
             ),
           ],
         ),
@@ -140,51 +168,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildProfilePicture() {
-    return CircleAvatar(
-      radius: 50,
-      backgroundColor: Colors.deepPurple,
-      child: Text(
-        widget.username.isNotEmpty ? widget.username[0].toUpperCase() : 'U',
-        style: const TextStyle(
-            fontSize: 40, fontWeight: FontWeight.bold, color: Colors.white),
+  Widget _buildProfileInfoItem(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          Text(
+            value,
+            style: const TextStyle(fontSize: 16),
+          ),
+        ],
       ),
     );
   }
-
-  Widget _buildStatItem(String label, String value) {
-    return Column(
-      children: [
-        Text(
-          label,
-          style: const TextStyle(fontSize: 18),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          value,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 16),
-      ],
-    );
-  }
-
-  void _navigateToSettings(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => SettingsScreen()),
-    );
-  }
-}
-
-class UserStats {
-  final int totalQuizzes;
-  final int averageScore;
-  final int highScore;
-
-  UserStats({
-    required this.totalQuizzes,
-    required this.averageScore,
-    required this.highScore,
-  });
 }

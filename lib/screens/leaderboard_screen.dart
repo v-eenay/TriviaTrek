@@ -4,6 +4,7 @@ import 'package:quiz_app_enrichment/screens/highscores_screen.dart';
 import 'package:quiz_app_enrichment/screens/profile_screen.dart';
 import 'package:quiz_app_enrichment/screens/settings_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class LeaderboardScreen extends StatefulWidget {
   const LeaderboardScreen({Key? key}) : super(key: key);
@@ -14,38 +15,6 @@ class LeaderboardScreen extends StatefulWidget {
 
 class _LeaderboardScreenState extends State<LeaderboardScreen> {
   String username = '';
-  List<Map<String, dynamic>> leaderboard = [
-    {
-      'name': 'John Doe',
-      'score': 500,
-      'category': 'Science',
-      'date': '2022-05-20',
-    },
-    {
-      'name': 'Alice Smith',
-      'score': 400,
-      'category': 'History',
-      'date': '2022-05-21',
-    },
-    {
-      'name': 'Bob Johnson',
-      'score': 300,
-      'category': 'Geography',
-      'date': '2022-05-22',
-    },
-    {
-      'name': 'Emma Brown',
-      'score': 200,
-      'category': 'Literature',
-      'date': '2022-05-23',
-    },
-    {
-      'name': 'Michael Wilson',
-      'score': 100,
-      'category': 'Sports',
-      'date': '2022-05-24',
-    },
-  ];
 
   @override
   void initState() {
@@ -58,6 +27,47 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
     setState(() {
       username = prefs.getString('username') ?? '';
     });
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchLeaderboard() async {
+    final snapshot =
+        await FirebaseFirestore.instance.collection('quiz_history').get();
+    final userScores = <String, int>{};
+    final userQuestions = <String, int>{};
+    final userCorrectAnswers = <String, int>{};
+
+    for (var doc in snapshot.docs) {
+      final data = doc.data();
+      final user = data['user'];
+      final score = data['score'] as int;
+      final correctAnswers = data['correct_answers'] as int;
+      final totalQuestions = data['total_questions'] as int;
+
+      userScores[user] = (userScores[user] ?? 0) + score;
+      userQuestions[user] = (userQuestions[user] ?? 0) + totalQuestions;
+      userCorrectAnswers[user] =
+          (userCorrectAnswers[user] ?? 0) + correctAnswers;
+    }
+
+    final leaderboard = userScores.keys.map((user) {
+      final totalScore = userScores[user]!;
+      final totalQuestions = userQuestions[user]!;
+      final correctAnswers = userCorrectAnswers[user]!;
+      final accuracy = totalQuestions > 0
+          ? (correctAnswers / totalQuestions * 100).toStringAsFixed(2)
+          : '0.00';
+
+      return {
+        'name': user,
+        'score': totalScore,
+        'accuracy': accuracy,
+      };
+    }).toList();
+
+    leaderboard
+        .sort((a, b) => (b['score'] as int).compareTo(a['score'] as int));
+
+    return leaderboard.take(10).toList();
   }
 
   @override
@@ -84,20 +94,36 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
           ),
         ],
       ),
-      body: Container(
-        padding: const EdgeInsets.all(16),
-        child: ListView.builder(
-          itemCount: leaderboard.length,
-          itemBuilder: (context, index) {
-            final entry = leaderboard[index];
-            final rank = index + 1;
-            final name = entry['name'];
-            final score = entry['score'];
-            final category = entry['category'];
-            final date = entry['date'];
-            return _buildLeaderboardItem(rank, name, score, category, date);
-          },
-        ),
+      body: FutureBuilder<List<Map<String, dynamic>>>(
+        future: _fetchLeaderboard(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return Center(child: Text('No leaderboard data available.'));
+          } else {
+            final leaderboard = snapshot.data!;
+            return ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: leaderboard.length,
+              itemBuilder: (context, index) {
+                final entry = leaderboard[index];
+                final rank = index == 0
+                    ? 1
+                    : (leaderboard[index - 1]['score'] == entry['score']
+                        ? leaderboard[index - 1]['rank']
+                        : index + 1);
+                entry['rank'] = rank;
+                final name = entry['name'];
+                final score = entry['score'];
+                final accuracy = entry['accuracy'];
+                return _buildLeaderboardItem(rank, name, score, accuracy);
+              },
+            );
+          }
+        },
       ),
       bottomNavigationBar: BottomAppBar(
         color: Colors.deepPurple,
@@ -147,7 +173,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
   }
 
   Widget _buildLeaderboardItem(
-      int rank, String name, int score, String category, String date) {
+      int rank, String name, int score, String accuracy) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(16),
@@ -174,12 +200,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Category: $category',
-            style: const TextStyle(fontSize: 16),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Date: $date',
+            'Accuracy: $accuracy%',
             style: const TextStyle(fontSize: 16),
           ),
         ],

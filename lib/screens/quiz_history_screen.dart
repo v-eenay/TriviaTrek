@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:quiz_app_enrichment/screens/categories_screen.dart';
+import 'package:quiz_app_enrichment/screens/highscores_screen.dart';
+import 'package:quiz_app_enrichment/screens/home_screen.dart';
+import 'package:quiz_app_enrichment/screens/leaderboard_screen.dart';
+import 'package:quiz_app_enrichment/screens/profile_screen.dart';
 
 class QuizHistoryScreen extends StatefulWidget {
   const QuizHistoryScreen({Key? key}) : super(key: key);
@@ -98,31 +103,50 @@ class _QuizHistoryScreenState extends State<QuizHistoryScreen> {
           }
         },
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 1,
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.history),
-            label: 'Quiz History',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profile',
-          ),
-        ],
-        onTap: (index) {
-          if (index == 0) {
-            Navigator.pushReplacementNamed(context, '/home');
-          } else if (index == 1) {
-            // Stay on Quiz History screen (current screen)
-          } else if (index == 2) {
-            Navigator.pushReplacementNamed(context, '/profile');
-          }
-        },
+      bottomNavigationBar: BottomAppBar(
+        color: Colors.deepPurple,
+        elevation: 0,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            IconButton(
+              icon: Icon(Icons.home, color: Colors.white),
+              onPressed: () {
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(builder: (context) => HomeScreen()),
+                );
+              },
+            ),
+            IconButton(
+              icon: Icon(Icons.category, color: Colors.white),
+              onPressed: () {
+                Navigator.of(context).pushReplacement(MaterialPageRoute(
+                    builder: (context) => CategoriesScreen()));
+              },
+            ),
+            IconButton(
+              icon: Icon(Icons.star, color: Colors.white),
+              onPressed: () {
+                Navigator.of(context).pushReplacement(MaterialPageRoute(
+                    builder: (context) => HighscoresScreen()));
+              },
+            ),
+            IconButton(
+              icon: Icon(Icons.leaderboard, color: Colors.white),
+              onPressed: () {
+                Navigator.of(context).pushReplacement(MaterialPageRoute(
+                    builder: (context) => LeaderboardScreen()));
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.person, color: Colors.white),
+              onPressed: () {
+                Navigator.of(context).pushReplacement(MaterialPageRoute(
+                    builder: (context) => ProfileScreen(username: 'username')));
+              },
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+// import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:quiz_app_enrichment/screens/categories_screen.dart';
 import 'package:quiz_app_enrichment/screens/highscores_screen.dart';
 import 'package:quiz_app_enrichment/screens/home_screen.dart';
 import 'package:quiz_app_enrichment/screens/leaderboard_screen.dart';
 import 'package:quiz_app_enrichment/screens/profile_screen.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({Key? key}) : super(key: key);
@@ -14,29 +15,6 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  bool _darkModeEnabled = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadThemeSettings();
-  }
-
-  Future<void> _loadThemeSettings() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _darkModeEnabled = prefs.getBool('darkModeEnabled') ?? false;
-    });
-  }
-
-  Future<void> _saveThemeSettings(bool darkModeEnabled) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('darkModeEnabled', darkModeEnabled);
-    setState(() {
-      _darkModeEnabled = darkModeEnabled;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -51,14 +29,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
           children: [
             const SizedBox(height: 16.0),
             _buildSettingsCategory(
-              'Theme',
+              'Account',
               [
-                SwitchListTile(
-                  title: const Text('Dark Mode'),
-                  value: _darkModeEnabled,
-                  onChanged: (value) {
-                    _saveThemeSettings(value);
-                  },
+                _buildSettingsItem(
+                  'Change Password',
+                  Icons.lock,
+                  () => _changePassword(context),
                 ),
               ],
             ),
@@ -112,23 +88,55 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
     );
   }
+}
 
-  Widget _buildSettingsCategory(String title, List<Widget> children) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(bottom: 8.0),
-          child: Text(
-            title,
-            style: const TextStyle(
-              fontSize: 18.0,
-              fontWeight: FontWeight.bold,
-            ),
+Widget _buildSettingsCategory(String title, List<Widget> children) {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Padding(
+        padding: const EdgeInsets.only(bottom: 8.0),
+        child: Text(
+          title,
+          style: const TextStyle(
+            fontSize: 18.0,
+            fontWeight: FontWeight.bold,
           ),
         ),
-        ...children,
-      ],
+      ),
+      ...children,
+    ],
+  );
+}
+
+Widget _buildSettingsItem(String title, IconData icon, VoidCallback onPressed) {
+  return ListTile(
+    leading: Icon(icon),
+    title: Text(title),
+    onTap: onPressed,
+  );
+}
+
+Future<void> _changePassword(BuildContext context) async {
+  // Implement your change password logic here
+  try {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      // Example code to send password reset email
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: user.email!);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Password reset email sent.'),
+        ),
+      );
+    } else {
+      throw Exception('User not logged in.');
+    }
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Failed to send password reset email: $e'),
+      ),
     );
   }
 }

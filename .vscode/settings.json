@@ -1,4 +1,5 @@
 {
   "cmake.sourceDirectory": "C:/Users/koira/OneDrive/Desktop/New Project/Flutter_sample/quiz_app_enrichment/linux",
-  "java.configuration.updateBuildConfiguration": "interactive"
+  "java.configuration.updateBuildConfiguration": "interactive",
+  "cSpell.words": ["Highscores"]
 }
