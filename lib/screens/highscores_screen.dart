@@ -1,12 +1,11 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:quiz_app_enrichment/screens/categories_screen.dart';
 import 'package:quiz_app_enrichment/screens/home_screen.dart';
 import 'package:quiz_app_enrichment/screens/leaderboard_screen.dart';
 import 'package:quiz_app_enrichment/screens/profile_screen.dart';
 import 'package:quiz_app_enrichment/screens/settings_screen.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class HighscoresScreen extends StatefulWidget {
   const HighscoresScreen({Key? key}) : super(key: key);
@@ -27,36 +26,41 @@ class _HighscoresScreenState extends State<HighscoresScreen> {
   }
 
   Future<void> _loadUsername() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      username = prefs.getString('username') ?? '';
-    });
-  }
-
-  Future<void> _loadHighscores() async {
-    final prefs = await SharedPreferences.getInstance();
-    final highscoresJson = prefs.getStringList('highscores');
-    if (highscoresJson != null) {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      DocumentSnapshot<Map<String, dynamic>> snapshot = await FirebaseFirestore
+          .instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
       setState(() {
-        highscores = highscoresJson
-            .map((entry) => Map<String, dynamic>.from(jsonDecode(entry)))
-            .toList();
+        username = snapshot.data()?['name'] ?? '';
       });
     }
   }
 
-  Future<void> _saveHighscores() async {
-    final prefs = await SharedPreferences.getInstance();
-    final highscoresJson = highscores.map((entry) => entry.toString()).toList();
-    await prefs.setStringList('highscores', highscoresJson);
-  }
-
-  void _addHighscore(String name, int score) {
-    setState(() {
-      highscores.add({'name': name, 'score': score});
-      highscores.sort((a, b) => b['score'].compareTo(a['score']));
-    });
-    _saveHighscores();
+  Future<void> _loadHighscores() async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      QuerySnapshot<Map<String, dynamic>> querySnapshot =
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .collection('quiz_history')
+              .orderBy('score', descending: true)
+              .limit(10)
+              .get();
+      setState(() {
+        highscores = querySnapshot.docs.map((doc) {
+          final score = doc['score'] as int;
+          final accuracy = double.parse(doc['accuracy'] as String);
+          return {
+            'score': score,
+            'accuracy': accuracy.toStringAsFixed(2),
+          };
+        }).toList();
+      });
+    }
   }
 
   @override
@@ -83,25 +87,29 @@ class _HighscoresScreenState extends State<HighscoresScreen> {
           ),
         ],
       ),
-      body: Container(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(
-              child: ListView.builder(
-                itemCount: highscores.length,
-                itemBuilder: (context, index) {
-                  final entry = highscores[index];
-                  final name = entry['name'];
-                  final score = entry['score'];
-                  return _buildHighscoreItem(name, score);
-                },
+      body: highscores.isEmpty
+          ? Center(
+              child: Text('No highscores to display.'),
+            )
+          : Container(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: highscores.length,
+                      itemBuilder: (context, index) {
+                        final entry = highscores[index];
+                        final score = entry['score'];
+                        final accuracy = entry['accuracy'];
+                        return _buildHighscoreItem(index + 1, score, accuracy);
+                      },
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
-      ),
       bottomNavigationBar: BottomAppBar(
         color: Colors.deepPurple,
         elevation: 0,
@@ -137,20 +145,21 @@ class _HighscoresScreenState extends State<HighscoresScreen> {
               },
             ),
             IconButton(
-                icon: const Icon(Icons.person, color: Colors.white),
-                onPressed: () {
-                  Navigator.of(context).pushReplacement(MaterialPageRoute(
-                      builder: (context) => ProfileScreen(
-                            username: 'username',
-                          )));
-                }),
+              icon: const Icon(Icons.person, color: Colors.white),
+              onPressed: () {
+                Navigator.of(context).pushReplacement(MaterialPageRoute(
+                    builder: (context) => ProfileScreen(
+                          username: username,
+                        )));
+              },
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildHighscoreItem(String name, int score) {
+  Widget _buildHighscoreItem(int rank, int score, String accuracy) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(16),
@@ -158,15 +167,21 @@ class _HighscoresScreenState extends State<HighscoresScreen> {
         borderRadius: BorderRadius.circular(10),
         color: Colors.blue[100],
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            name,
+            'Rank: $rank',
             style: const TextStyle(fontSize: 16),
           ),
+          const SizedBox(height: 8),
           Text(
             'Score: $score',
+            style: const TextStyle(fontSize: 16),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Accuracy: $accuracy%',
             style: const TextStyle(fontSize: 16),
           ),
         ],

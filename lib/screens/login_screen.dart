@@ -25,7 +25,6 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       QuerySnapshot<Map<String, dynamic>> querySnapshot;
 
-      // Check if input is an email or username
       if (usernameOrEmail.contains('@')) {
         querySnapshot = await _firestore
             .collection('users')
@@ -116,7 +115,6 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       QuerySnapshot<Map<String, dynamic>> querySnapshot;
 
-      // Check if input is an email or username
       if (usernameOrEmail.contains('@')) {
         querySnapshot = await _firestore
             .collection('users')
@@ -192,8 +190,20 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Login'),
+        title: Text(
+          'Login to TriviaTrek',
+          style: TextStyle(color: Colors.white),
+        ),
         backgroundColor: Colors.deepPurple,
+        centerTitle: true,
+        leading: SizedBox(
+          width: kToolbarHeight,
+          height: kToolbarHeight,
+          child: Image.asset(
+            'assets/app_icon.png',
+            fit: BoxFit.contain,
+          ),
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),

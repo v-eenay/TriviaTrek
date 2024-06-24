@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:quiz_app_enrichment/screens/login_screen.dart';
+import 'package:quiz_app_enrichment/screens/quiz_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'home_screen.dart';
+import 'profile_screen.dart';
 import 'settings_screen.dart';
 import 'highscores_screen.dart';
 import 'leaderboard_screen.dart';
-import 'quiz_screen.dart';
-import 'login_screen.dart';
-import 'profile_screen.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class CategoriesScreen extends StatefulWidget {
   const CategoriesScreen({Key? key}) : super(key: key);
@@ -89,37 +89,56 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                       title: 'Science',
                       icon: Icons.science,
                       backgroundColor: Colors.deepPurpleAccent,
-                      onPressed: () => _startQuiz(context),
+                      apiUrl:
+                          'https://opentdb.com/api.php?amount=20&category=17',
                     ),
                     _buildCategoryButton(
                       title: 'History',
                       icon: Icons.history,
                       backgroundColor: Colors.orangeAccent,
-                      onPressed: () => _startQuiz(context),
+                      apiUrl:
+                          'https://opentdb.com/api.php?amount=20&category=23',
+                    ),
+                    _buildCategoryButton(
+                      title: 'Computer',
+                      icon: Icons.computer,
+                      backgroundColor: Colors.lightBlueAccent,
+                      apiUrl:
+                          'https://opentdb.com/api.php?amount=20&category=18',
                     ),
                     _buildCategoryButton(
                       title: 'Sports',
                       icon: Icons.sports,
                       backgroundColor: Colors.green,
-                      onPressed: () => _startQuiz(context),
+                      apiUrl:
+                          'https://opentdb.com/api.php?amount=20&category=21&type=multiple',
                     ),
                     _buildCategoryButton(
                       title: 'Geography',
                       icon: Icons.map,
                       backgroundColor: const Color.fromARGB(255, 0, 140, 255),
-                      onPressed: () => _startQuiz(context),
+                      apiUrl:
+                          'https://opentdb.com/api.php?amount=20&category=22&type=multiple',
                     ),
                     _buildCategoryButton(
-                      title: 'Literature',
-                      icon: Icons.book,
+                      title: 'Art',
+                      icon: Icons.brush,
                       backgroundColor: Colors.purple,
-                      onPressed: () => _startQuiz(context),
+                      apiUrl:
+                          'https://opentdb.com/api.php?amount=20&category=25&type=multiple',
                     ),
                     _buildCategoryButton(
-                      title: 'Other/Random',
-                      icon: Icons.question_mark,
+                      title: 'Anime and Manga',
+                      icon: Icons.animation,
+                      backgroundColor: Colors.redAccent,
+                      apiUrl:
+                          'https://opentdb.com/api.php?amount=20&category=31&type=multiple',
+                    ),
+                    _buildCategoryButton(
+                      title: 'Random/Others',
+                      icon: Icons.miscellaneous_services,
                       backgroundColor: Colors.grey,
-                      onPressed: () => _startQuiz(context),
+                      apiUrl: 'https://opentdb.com/api.php?amount=20',
                     ),
                   ],
                 ),
@@ -178,12 +197,17 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     required String title,
     required IconData icon,
     required Color backgroundColor,
-    required VoidCallback onPressed,
+    required String apiUrl,
   }) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: onPressed,
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => QuizScreen(apiUrl: apiUrl)),
+          );
+        },
         borderRadius: BorderRadius.circular(16),
         child: Ink(
           decoration: BoxDecoration(
@@ -220,13 +244,6 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
           ),
         ),
       ),
-    );
-  }
-
-  void _startQuiz(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => QuizScreen()),
     );
   }
 

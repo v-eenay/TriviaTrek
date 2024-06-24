@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:quiz_app_enrichment/screens/categories_screen.dart';
 import 'profile_screen.dart';
 import 'settings_screen.dart';
-import 'categories_screen.dart';
 import 'highscores_screen.dart';
 import 'leaderboard_screen.dart';
 import 'quiz_screen.dart';
 import 'login_screen.dart';
+import 'quiz_history_screen.dart.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key});
@@ -17,25 +18,45 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  late String username;
+  String fullName = '';
+  bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadUsername();
+    _loadUserData();
   }
 
-  Future<void> _loadUsername() async {
+  Future<void> _loadUserData() async {
     User? user = FirebaseAuth.instance.currentUser;
 
     if (user != null) {
-      setState(() {
-        username = user.displayName ?? user.email ?? '';
-      });
+      try {
+        DocumentSnapshot<Map<String, dynamic>> snapshot =
+            await FirebaseFirestore.instance
+                .collection('users')
+                .doc(user.uid)
+                .get();
+
+        if (snapshot.exists) {
+          setState(() {
+            fullName = snapshot.data()?['name'] ?? 'User';
+            isLoading = false;
+          });
+        } else {
+          throw Exception('User data not found');
+        }
+      } catch (e) {
+        print('Error loading user data: $e');
+        setState(() {
+          fullName = 'User';
+          isLoading = false;
+        });
+      }
     } else {
-      final prefs = await SharedPreferences.getInstance();
       setState(() {
-        username = prefs.getString('username') ?? '';
+        fullName = 'User';
+        isLoading = false;
       });
     }
   }
@@ -50,15 +71,23 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         backgroundColor: Colors.deepPurple,
         foregroundColor: Colors.white,
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: Icon(Icons.menu),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
+        ),
         actions: [
-          GestureDetector(
-            onTap: () =>
-                _navigateTo(context, ProfileScreen(username: username)),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: GestureDetector(
+              onTap: fullName.isNotEmpty
+                  ? () =>
+                      _navigateTo(context, ProfileScreen(username: fullName))
+                  : null,
               child: Center(
                 child: Text(
-                  username,
+                  fullName,
                   style: const TextStyle(
                       fontSize: 16, fontWeight: FontWeight.bold),
                 ),
@@ -68,79 +97,93 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       drawer: _buildDrawer(context),
-      body: Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-        ),
-        child: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Welcome, $username!',
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
+      body: isLoading
+          ? const Center(
+              child: CircularProgressIndicator(),
+            )
+          : Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+              ),
+              child: SafeArea(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Welcome, $fullName!',
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      GridView.count(
+                        crossAxisCount: 2,
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        mainAxisSpacing: 16,
+                        crossAxisSpacing: 16,
+                        children: [
+                          _buildHomeButton(
+                            title: 'Start Random Quiz',
+                            icon: Icons.play_arrow,
+                            backgroundColor: Colors.deepPurpleAccent,
+                            onPressed: () => _startQuiz(context,
+                                'https://opentdb.com/api.php?amount=20'),
+                          ),
+                          _buildHomeButton(
+                            title: 'Categories',
+                            icon: Icons.category,
+                            backgroundColor: Colors.orangeAccent,
+                            onPressed: () =>
+                                _navigateTo(context, CategoriesScreen()),
+                          ),
+                          _buildHomeButton(
+                            title: 'Highscores',
+                            icon: Icons.star,
+                            backgroundColor: Colors.green,
+                            onPressed: () =>
+                                _navigateTo(context, HighscoresScreen()),
+                          ),
+                          _buildHomeButton(
+                            title: 'Leaderboard',
+                            icon: Icons.leaderboard,
+                            backgroundColor:
+                                const Color.fromARGB(255, 0, 140, 255),
+                            onPressed: () =>
+                                _navigateTo(context, const LeaderboardScreen()),
+                          ),
+                          _buildHomeButton(
+                            title: 'Profile',
+                            icon: Icons.person,
+                            backgroundColor: Colors.purple,
+                            onPressed: () => _navigateTo(
+                                context, ProfileScreen(username: fullName)),
+                          ),
+                          _buildHomeButton(
+                            title: 'Settings',
+                            icon: Icons.settings,
+                            backgroundColor: Colors.blue,
+                            onPressed: () =>
+                                _navigateTo(context, const SettingsScreen()),
+                          ),
+                          _buildHomeButton(
+                            title: 'Quiz History',
+                            icon: Icons.history,
+                            backgroundColor: Colors.deepOrange,
+                            onPressed: () =>
+                                _navigateTo(context, const QuizHistoryScreen()),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 16),
-                GridView.count(
-                  crossAxisCount: 2,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  mainAxisSpacing: 16,
-                  crossAxisSpacing: 16,
-                  children: [
-                    _buildHomeButton(
-                      title: 'Start Random Quiz',
-                      icon: Icons.play_arrow,
-                      backgroundColor: Colors.deepPurpleAccent,
-                      onPressed: () => _navigateTo(context, const QuizScreen()),
-                    ),
-                    _buildHomeButton(
-                      title: 'Categories',
-                      icon: Icons.category,
-                      backgroundColor: Colors.orangeAccent,
-                      onPressed: () => _navigateTo(context, CategoriesScreen()),
-                    ),
-                    _buildHomeButton(
-                      title: 'Highscores',
-                      icon: Icons.star,
-                      backgroundColor: Colors.green,
-                      onPressed: () =>
-                          _navigateTo(context, const HighscoresScreen()),
-                    ),
-                    _buildHomeButton(
-                      title: 'Leaderboard',
-                      icon: Icons.leaderboard,
-                      backgroundColor: const Color.fromARGB(255, 0, 140, 255),
-                      onPressed: () =>
-                          _navigateTo(context, const LeaderboardScreen()),
-                    ),
-                    _buildHomeButton(
-                      title: 'Profile',
-                      icon: Icons.person,
-                      backgroundColor: Colors.purple,
-                      onPressed: () => _navigateTo(
-                          context, ProfileScreen(username: username)),
-                    ),
-                    _buildHomeButton(
-                      title: 'Settings',
-                      icon: Icons.settings,
-                      backgroundColor: Colors.blue,
-                      onPressed: () =>
-                          _navigateTo(context, const SettingsScreen()),
-                    ),
-                  ],
-                ),
-              ],
+              ),
             ),
-          ),
-        ),
-      ),
     );
   }
 
@@ -167,7 +210,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    username,
+                    fullName,
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 24,
@@ -186,7 +229,7 @@ class _HomeScreenState extends State<HomeScreen> {
             _buildDrawerItem(context, 'Leaderboard', Icons.leaderboard,
                 () => _navigateTo(context, const LeaderboardScreen())),
             _buildDrawerItem(context, 'Profile', Icons.person,
-                () => _navigateTo(context, ProfileScreen(username: username))),
+                () => _navigateTo(context, ProfileScreen(username: fullName))),
             _buildDrawerItem(context, 'Settings', Icons.settings,
                 () => _navigateTo(context, const SettingsScreen())),
             const Divider(color: Colors.white),
@@ -259,6 +302,16 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _startQuiz(BuildContext context, String apiUrl) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+          builder: (context) => QuizScreen(
+                apiUrl: apiUrl,
+              )),
+    );
+  }
+
   void _navigateTo(BuildContext context, Widget screen) {
     Navigator.push(
       context,
@@ -267,8 +320,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _logout(BuildContext context) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
+    await FirebaseAuth.instance.signOut();
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (context) => LoginScreen()),
       (Route<dynamic> route) => false,
