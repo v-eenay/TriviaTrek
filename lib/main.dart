@@ -5,7 +5,17 @@ import 'package:firebase_core/firebase_core.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+  await Firebase.initializeApp(
+    options: FirebaseOptions(
+      apiKey: "AIzaSyCyfYaHkU9-trDt7pWBrI3vPvgLbl57AmQ",
+      authDomain: "enrichmentquizapp.firebaseapp.com",
+      projectId: "enrichmentquizapp",
+      storageBucket: "enrichmentquizapp.appspot.com",
+      messagingSenderId: "941720131416",
+      appId: "1:941720131416:android:244ae946be78242c60772d",
+      measurementId: "",
+    ),
+  );
   runApp(const QuizApp());
 }
 
