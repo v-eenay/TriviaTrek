@@ -24,6 +24,7 @@ class _QuizScreenState extends State<QuizScreen> {
   final HtmlUnescape _htmlUnescape = HtmlUnescape();
   List<Question> _answeredQuestions = [];
   Timer? _timer;
+  bool _quizEnded = false;
 
   @override
   void initState() {
@@ -34,7 +35,9 @@ class _QuizScreenState extends State<QuizScreen> {
   @override
   void dispose() {
     _timer?.cancel();
-    _saveQuizResult(interrupted: true);
+    if (!_quizEnded) {
+      _saveQuizResult(interrupted: true);
+    }
     super.dispose();
   }
 
@@ -132,6 +135,7 @@ class _QuizScreenState extends State<QuizScreen> {
         _currentIndex++;
         _secondsRemaining = 20;
       });
+      _startTimer();
     } else {
       _stopTimer();
       _saveQuizResult();
@@ -139,6 +143,9 @@ class _QuizScreenState extends State<QuizScreen> {
   }
 
   void _saveQuizResult({bool interrupted = false}) async {
+    if (_quizEnded) return;
+    _quizEnded = true;
+
     User? user = FirebaseAuth.instance.currentUser;
     if (user != null && _answeredQuestions.isNotEmpty) {
       double accuracy = (_score / _answeredQuestions.length) * 100;
@@ -260,12 +267,8 @@ class _QuizScreenState extends State<QuizScreen> {
                   .map((option) => _buildOption(option))
                   .toList(),
               const SizedBox(height: 20),
-              LinearProgressIndicator(
-                value: _secondsRemaining / 20,
-                backgroundColor: Colors.grey[300],
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  _secondsRemaining > 5 ? Colors.green : Colors.red,
-                ),
+              CircularCountdown(
+                secondsRemaining: _secondsRemaining,
               ),
               const SizedBox(height: 8),
               Text(
@@ -307,6 +310,40 @@ class _QuizScreenState extends State<QuizScreen> {
           option,
           style: const TextStyle(fontSize: 16),
         ),
+      ),
+    );
+  }
+}
+
+class CircularCountdown extends StatelessWidget {
+  final int secondsRemaining;
+
+  const CircularCountdown({Key? key, required this.secondsRemaining})
+      : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          SizedBox(
+            width: 100,
+            height: 100,
+            child: CircularProgressIndicator(
+              value: secondsRemaining / 20,
+              backgroundColor: Colors.grey[300],
+              valueColor: AlwaysStoppedAnimation<Color>(
+                secondsRemaining > 5 ? Colors.green : Colors.red,
+              ),
+              strokeWidth: 8,
+            ),
+          ),
+          Text(
+            '$secondsRemaining',
+            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          ),
+        ],
       ),
     );
   }

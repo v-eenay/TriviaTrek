@@ -71,11 +71,19 @@ class _HomeScreenState extends State<HomeScreen> {
           'Quiz App',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
-        backgroundColor: Colors.deepPurple,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.deepPurple, Colors.deepPurpleAccent],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
         foregroundColor: Colors.white,
         leading: Builder(
           builder: (context) => IconButton(
-            icon: Icon(Icons.menu),
+            icon: const Icon(Icons.menu),
             onPressed: () => Scaffold.of(context).openDrawer(),
           ),
         ),
@@ -149,50 +157,61 @@ class _HomeScreenState extends State<HomeScreen> {
                           _buildHomeButton(
                             title: 'Start Random Quiz',
                             icon: Icons.play_arrow,
-                            backgroundColor: Colors.deepPurpleAccent,
+                            gradientColors: [
+                              Colors.deepPurpleAccent,
+                              Colors.deepPurple
+                            ],
                             onPressed: () => _startQuiz(context,
                                 'https://opentdb.com/api.php?amount=20'),
                           ),
                           _buildHomeButton(
                             title: 'Categories',
                             icon: Icons.category,
-                            backgroundColor: Colors.orangeAccent,
+                            gradientColors: [
+                              Colors.orangeAccent,
+                              Colors.orange
+                            ],
                             onPressed: () =>
                                 _navigateTo(context, CategoriesScreen()),
                           ),
                           _buildHomeButton(
                             title: 'Highscores',
                             icon: Icons.star,
-                            backgroundColor: Colors.green,
+                            gradientColors: [Colors.greenAccent, Colors.green],
                             onPressed: () =>
-                                _navigateTo(context, HighscoresScreen()),
+                                _navigateTo(context, const HighscoresScreen()),
                           ),
                           _buildHomeButton(
                             title: 'Leaderboard',
                             icon: Icons.leaderboard,
-                            backgroundColor:
-                                const Color.fromARGB(255, 0, 140, 255),
+                            gradientColors: [
+                              Color.fromARGB(255, 0, 140, 255),
+                              Color.fromARGB(255, 0, 120, 255)
+                            ],
                             onPressed: () =>
                                 _navigateTo(context, const LeaderboardScreen()),
                           ),
                           _buildHomeButton(
                             title: 'Quiz History',
                             icon: Icons.history,
-                            backgroundColor: Colors.deepOrange,
+                            gradientColors: [Colors.deepOrange, Colors.orange],
                             onPressed: () =>
                                 _navigateTo(context, const QuizHistoryScreen()),
                           ),
                           _buildHomeButton(
                             title: 'Profile',
                             icon: Icons.person,
-                            backgroundColor: Colors.purple,
+                            gradientColors: [
+                              Colors.purple,
+                              Colors.purpleAccent
+                            ],
                             onPressed: () => _navigateTo(
                                 context, ProfileScreen(username: fullName)),
                           ),
                           _buildHomeButton(
                             title: 'Settings',
                             icon: Icons.settings,
-                            backgroundColor: Colors.blue,
+                            gradientColors: [Colors.blue, Colors.blueAccent],
                             onPressed: () =>
                                 _navigateTo(context, const SettingsScreen()),
                           ),
@@ -283,7 +302,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildHomeButton({
     required String title,
     required IconData icon,
-    required Color backgroundColor,
+    required List<Color> gradientColors,
     required VoidCallback onPressed,
   }) {
     return Material(
@@ -293,7 +312,11 @@ class _HomeScreenState extends State<HomeScreen> {
         borderRadius: BorderRadius.circular(16),
         child: Ink(
           decoration: BoxDecoration(
-            color: backgroundColor,
+            gradient: LinearGradient(
+              colors: gradientColors,
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
