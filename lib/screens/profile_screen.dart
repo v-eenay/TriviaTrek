@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:quiz_app_enrichment/screens/categories_screen.dart';
+import 'package:quiz_app_enrichment/screens/highscores_screen.dart';
+import 'package:quiz_app_enrichment/screens/leaderboard_screen.dart';
+import 'package:quiz_app_enrichment/screens/settings_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   final String username;
@@ -14,7 +18,6 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   late String _name;
   late String _email;
-  late String _dob;
   late String _address;
   late int _totalQuizzes;
   late int _totalScore;
@@ -26,7 +29,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     super.initState();
     _name = '';
     _email = '';
-    _dob = '';
     _address = '';
     _totalQuizzes = 0;
     _totalScore = 0;
@@ -49,7 +51,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           setState(() {
             _name = data['name'] ?? '';
             _email = data['email'] ?? '';
-            _dob = data['dob'] ?? '';
             _address = data['address'] ?? '';
           });
 
@@ -98,6 +99,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           : SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   _buildProfileHeader(),
                   const SizedBox(height: 16),
@@ -152,12 +154,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildProfileInfo() {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildProfileInfoItem(Icons.email, 'Email', _email),
-        _buildProfileInfoItem(Icons.cake, 'Date of Birth', _dob),
         _buildProfileInfoItem(Icons.home, 'Address', _address),
         _buildProfileInfoItem(
-            Icons.quiz, 'Total Quizzes', _totalQuizzes.toString()),
+            Icons.quiz, 'Total Quizzes Taken', _totalQuizzes.toString()),
         _buildProfileInfoItem(
             Icons.score, 'Total Score', _totalScore.toString()),
         _buildProfileInfoItem(
@@ -173,12 +175,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         children: [
           Icon(icon, color: Colors.deepPurple),
           const SizedBox(width: 16),
-          Expanded(
-            child: Text(
-              label,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
+          const SizedBox(width: 8),
           Text(
             value,
             style: const TextStyle(fontSize: 16),
@@ -191,6 +192,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildBottomNavigationBar() {
     return BottomAppBar(
       color: Colors.deepPurple,
+      elevation: 0,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
@@ -198,15 +200,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Navigator.of(context).popUntil((route) => route.isFirst);
           }),
           _buildBottomNavItem(Icons.category, 'Categories', () {
-            Navigator.of(context).pop();
+            Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (context) => CategoriesScreen()));
           }),
-          _buildBottomNavItem(Icons.star, 'Favorites', () {
-            Navigator.of(context).pop();
+          _buildBottomNavItem(Icons.star, 'Highscores', () {
+            Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (context) => HighscoresScreen()));
           }),
           _buildBottomNavItem(Icons.leaderboard, 'Leaderboard', () {
-            Navigator.of(context).pop();
+            Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (context) => LeaderboardScreen()));
           }),
-          _buildBottomNavItem(Icons.person, 'Profile', () {}),
+          _buildBottomNavItem(Icons.settings, 'Settings', () {
+            Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (context) => SettingsScreen()));
+          }),
         ],
       ),
     );

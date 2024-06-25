@@ -33,6 +33,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
     _emailController.addListener(_checkEmailAvailability);
   }
 
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _nameController.dispose();
+    _dateOfBirthController.dispose();
+    _addressController.dispose();
+    super.dispose();
+  }
+
   void _checkUsernameAvailability() async {
     String enteredUsername = _usernameController.text.trim().toLowerCase();
     if (enteredUsername.isNotEmpty) {
@@ -207,9 +218,23 @@ class _SignUpScreenState extends State<SignUpScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
+                SizedBox(height: 20),
+                Text(
+                  'Create a New Account',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.deepPurple,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: 20),
                 TextFormField(
                   controller: _usernameController,
-                  decoration: InputDecoration(labelText: 'Username'),
+                  decoration: InputDecoration(
+                    labelText: 'Username',
+                    prefixIcon: Icon(Icons.person),
+                  ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Please enter a username';
@@ -220,7 +245,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 SizedBox(height: 12),
                 TextFormField(
                   controller: _emailController,
-                  decoration: InputDecoration(labelText: 'Email'),
+                  decoration: InputDecoration(
+                    labelText: 'Email',
+                    prefixIcon: Icon(Icons.email),
+                  ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Please enter an email';
@@ -234,7 +262,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 SizedBox(height: 12),
                 TextFormField(
                   controller: _passwordController,
-                  decoration: InputDecoration(labelText: 'Password'),
+                  decoration: InputDecoration(
+                    labelText: 'Password',
+                    prefixIcon: Icon(Icons.lock),
+                  ),
                   obscureText: true,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -249,7 +280,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 SizedBox(height: 12),
                 TextFormField(
                   controller: _nameController,
-                  decoration: InputDecoration(labelText: 'Full Name'),
+                  decoration: InputDecoration(
+                    labelText: 'Full Name',
+                    prefixIcon: Icon(Icons.person),
+                  ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Please enter your full name';
@@ -260,8 +294,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 SizedBox(height: 12),
                 TextFormField(
                   controller: _dateOfBirthController,
-                  decoration:
-                      InputDecoration(labelText: 'Date of Birth (YYYY-MM-DD)'),
+                  decoration: InputDecoration(
+                    labelText: 'Date of Birth (YYYY-MM-DD)',
+                    prefixIcon: Icon(Icons.calendar_today),
+                  ),
                   onTap: () async {
                     DateTime? pickedDate = await showDatePicker(
                       context: context,
@@ -297,7 +333,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 SizedBox(height: 12),
                 TextFormField(
                   controller: _addressController,
-                  decoration: InputDecoration(labelText: 'Address'),
+                  decoration: InputDecoration(
+                    labelText: 'Address',
+                    prefixIcon: Icon(Icons.location_on),
+                  ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Please enter your address';
@@ -306,10 +345,22 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   },
                 ),
                 SizedBox(height: 20),
-                Center(
-                  child: ElevatedButton(
-                    onPressed: _signUp,
-                    child: Text('Sign Up'),
+                ElevatedButton(
+                  onPressed: _signUp,
+                  style: ButtonStyle(
+                    backgroundColor: WidgetStateProperty.all(Colors.deepPurple),
+                    shape: WidgetStateProperty.all(
+                      RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    padding: WidgetStateProperty.all(
+                      EdgeInsets.symmetric(vertical: 16),
+                    ),
+                  ),
+                  child: Text(
+                    'Sign Up',
+                    style: TextStyle(fontSize: 18, color: Colors.white),
                   ),
                 ),
               ],

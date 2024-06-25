@@ -62,7 +62,10 @@ class _QuizHistoryScreenState extends State<QuizHistoryScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Quiz History'),
+        title: const Text(
+          'Quiz History',
+          style: TextStyle(color: Colors.white),
+        ),
         backgroundColor: Colors.deepPurple,
       ),
       body: FutureBuilder<List<QuizHistory>>(
@@ -86,16 +89,37 @@ class _QuizHistoryScreenState extends State<QuizHistoryScreen> {
               itemCount: quizHistory.length,
               itemBuilder: (context, index) {
                 QuizHistory history = quizHistory[index];
-                return Card(
-                  margin: const EdgeInsets.all(8.0),
-                  child: ListTile(
-                    title: Text(
-                      'Score: ${history.score} / ${history.totalQuestions}',
+                return Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Card(
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    subtitle: Text(
-                      'Accuracy: ${history.accuracy}% - ${history.timestamp}',
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.all(16),
+                      title: Text(
+                        'Score: ${history.score} / ${history.totalQuestions}',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 8),
+                          Text(
+                            'Accuracy: ${history.accuracy}%',
+                            style: TextStyle(color: Colors.grey[700]),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Date: ${_formatTimestamp(history.timestamp)}',
+                            style: TextStyle(color: Colors.grey[700]),
+                          ),
+                        ],
+                      ),
+                      onTap: () => _navigateToQuestionsReview(context, history),
                     ),
-                    onTap: () => _showQuestionsDialog(context, history),
                   ),
                 );
               },
@@ -109,86 +133,96 @@ class _QuizHistoryScreenState extends State<QuizHistoryScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            IconButton(
-              icon: Icon(Icons.home, color: Colors.white),
-              onPressed: () {
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(builder: (context) => HomeScreen()),
-                );
-              },
-            ),
-            IconButton(
-              icon: Icon(Icons.category, color: Colors.white),
-              onPressed: () {
-                Navigator.of(context).pushReplacement(MaterialPageRoute(
-                    builder: (context) => CategoriesScreen()));
-              },
-            ),
-            IconButton(
-              icon: Icon(Icons.star, color: Colors.white),
-              onPressed: () {
-                Navigator.of(context).pushReplacement(MaterialPageRoute(
-                    builder: (context) => HighscoresScreen()));
-              },
-            ),
-            IconButton(
-              icon: Icon(Icons.leaderboard, color: Colors.white),
-              onPressed: () {
-                Navigator.of(context).pushReplacement(MaterialPageRoute(
-                    builder: (context) => LeaderboardScreen()));
-              },
-            ),
-            IconButton(
-              icon: const Icon(Icons.person, color: Colors.white),
-              onPressed: () {
-                Navigator.of(context).pushReplacement(MaterialPageRoute(
-                    builder: (context) => ProfileScreen(username: 'username')));
-              },
-            ),
+            _buildBottomNavItem(Icons.home, 'Home', () {
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (context) => HomeScreen()),
+              );
+            }),
+            _buildBottomNavItem(Icons.category, 'Categories', () {
+              Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(builder: (context) => CategoriesScreen()));
+            }),
+            _buildBottomNavItem(Icons.star, 'Highscores', () {
+              Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(builder: (context) => HighscoresScreen()));
+            }),
+            _buildBottomNavItem(Icons.leaderboard, 'Leaderboard', () {
+              Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(builder: (context) => LeaderboardScreen()));
+            }),
+            _buildBottomNavItem(Icons.person, 'Profile', () {
+              Navigator.of(context).pushReplacement(MaterialPageRoute(
+                  builder: (context) => ProfileScreen(username: 'username')));
+            }),
           ],
         ),
       ),
     );
   }
 
-  void _showQuestionsDialog(BuildContext context, QuizHistory history) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Questions Review'),
-          content: Container(
-            width: double.maxFinite,
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: history.questions.length,
-              itemBuilder: (context, index) {
-                Question question = history.questions[index];
-                String selectedAnswer =
-                    question.selectedAnswer ?? 'No answer selected';
-                return ListTile(
-                  title: Text(question.text),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Your Answer: $selectedAnswer'),
-                      Text('Correct Answer: ${question.correctAnswer}'),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('Close'),
+  String _formatTimestamp(DateTime timestamp) {
+    return '${timestamp.day}/${timestamp.month}/${timestamp.year}';
+  }
+
+  void _navigateToQuestionsReview(BuildContext context, QuizHistory history) {
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (context) => QuestionsReviewScreen(history: history),
+    ));
+  }
+
+  Widget _buildBottomNavItem(
+      IconData icon, String label, VoidCallback onPressed) {
+    return Expanded(
+      child: InkWell(
+        onTap: onPressed,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: Colors.white),
+            Text(
+              label,
+              style: TextStyle(color: Colors.white, fontSize: 12),
             ),
           ],
-        );
-      },
+        ),
+      ),
+    );
+  }
+}
+
+class QuestionsReviewScreen extends StatelessWidget {
+  final QuizHistory history;
+
+  const QuestionsReviewScreen({Key? key, required this.history})
+      : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Questions Review',
+            style: TextStyle(color: Colors.white)),
+        backgroundColor: Colors.deepPurple,
+      ),
+      body: ListView.builder(
+        itemCount: history.questions.length,
+        itemBuilder: (context, index) {
+          Question question = history.questions[index];
+          String selectedAnswer =
+              question.selectedAnswer ?? 'No answer selected';
+          return ListTile(
+            title: Text(question.text),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 4),
+                Text('Your Answer: $selectedAnswer'),
+                Text('Correct Answer: ${question.correctAnswer}'),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 }

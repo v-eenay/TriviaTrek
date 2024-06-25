@@ -6,6 +6,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
 
+void main() {
+  runApp(const MaterialApp(
+    home: QuizScreen(apiUrl: 'your_quiz_api_url_here'),
+  ));
+}
+
 class QuizScreen extends StatefulWidget {
   final String apiUrl;
 
@@ -216,7 +222,10 @@ class _QuizScreenState extends State<QuizScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text('No questions available.'),
+              Text(
+                'No questions available.',
+                style: TextStyle(fontSize: 18),
+              ),
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: () {
@@ -225,7 +234,13 @@ class _QuizScreenState extends State<QuizScreen> {
                   });
                   _fetchQuestions();
                 },
-                child: Text('Retry'),
+                style: ElevatedButton.styleFrom(
+                  padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: Text('Retry', style: TextStyle(fontSize: 18)),
               ),
             ],
           ),
@@ -251,14 +266,18 @@ class _QuizScreenState extends State<QuizScreen> {
             children: [
               Card(
                 elevation: 4,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Text(
                     question.text,
                     style: const TextStyle(
-                      fontSize: 18,
+                      fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
+                    textAlign: TextAlign.center,
                   ),
                 ),
               ),
@@ -285,7 +304,7 @@ class _QuizScreenState extends State<QuizScreen> {
 
   Widget _buildOption(String option) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: ElevatedButton(
         onPressed: () {
           if (option == _questions[_currentIndex].correctAnswer) {
@@ -377,6 +396,9 @@ class QuizResultScreen extends StatelessWidget {
           children: [
             Card(
               elevation: 4,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
@@ -387,20 +409,30 @@ class QuizResultScreen extends StatelessWidget {
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
                       ),
+                      textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 16),
                     Text(
                       'Accuracy: ${accuracy.toStringAsFixed(2)}%',
                       style: TextStyle(
-                        fontSize: 18,
+                        fontSize: 20,
                       ),
+                      textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 16),
                     ElevatedButton(
                       onPressed: () {
                         Navigator.of(context).pop();
                       },
-                      child: const Text('Finish'),
+                      style: ElevatedButton.styleFrom(
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      child:
+                          const Text('Finish', style: TextStyle(fontSize: 18)),
                     ),
                     const SizedBox(height: 16),
                     ElevatedButton(
@@ -412,7 +444,15 @@ class QuizResultScreen extends StatelessWidget {
                           ),
                         );
                       },
-                      child: const Text('Review Questions'),
+                      style: ElevatedButton.styleFrom(
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      child: const Text('Review Questions',
+                          style: TextStyle(fontSize: 18)),
                     ),
                   ],
                 ),
@@ -442,6 +482,9 @@ class QuizReviewScreen extends StatelessWidget {
           Question question = questions[index];
           return Card(
             margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
@@ -450,14 +493,20 @@ class QuizReviewScreen extends StatelessWidget {
                   Text(
                     question.text,
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   const SizedBox(height: 10),
-                  Text('Correct Answer: ${question.correctAnswer}'),
+                  Text(
+                    'Correct Answer: ${question.correctAnswer}',
+                    style: TextStyle(fontSize: 16),
+                  ),
                   const SizedBox(height: 4),
-                  Text('Your Answer: ${question.selectedAnswer ?? "-"}'),
+                  Text(
+                    'Your Answer: ${question.selectedAnswer ?? "-"}',
+                    style: TextStyle(fontSize: 16),
+                  ),
                 ],
               ),
             ),
