@@ -12,7 +12,7 @@ Welcome to TriviaTrek, your ultimate companion for exploring knowledge through q
 ### Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/triviatrek.git
+git clone https://github.com/v-eenay/triviatrek.git
 cd triviatrek
 ```
 
