@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:quiz_app_enrichment/models/user_model.dart';
 import 'package:quiz_app_enrichment/screens/categories_screen.dart';
 import 'package:quiz_app_enrichment/screens/home_screen.dart';
 import 'package:quiz_app_enrichment/screens/leaderboard_screen.dart';
@@ -117,8 +118,15 @@ class _HighscoresScreenState extends State<HighscoresScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             _buildBottomNavItem(Icons.home, 'Home', () {
-              Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(builder: (context) => HomeScreen()));
+              Navigator.of(context).pushReplacement(MaterialPageRoute(
+                  builder: (context) => HomeScreen(
+                      user: UserModel(
+                          userId: '',
+                          username: '',
+                          email: '',
+                          name: '',
+                          dateOfBirth: '',
+                          address: ''))));
             }),
             _buildBottomNavItem(Icons.category, 'Categories', () {
               Navigator.of(context).pushReplacement(

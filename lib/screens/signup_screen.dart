@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../models/user_model.dart';
 import 'home_screen.dart';
 
 class SignUpScreen extends StatefulWidget {
@@ -13,14 +14,13 @@ class SignUpScreen extends StatefulWidget {
 class _SignUpScreenState extends State<SignUpScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  final _usernameController = TextEditingController();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  final _nameController = TextEditingController();
-  final _dateOfBirthController = TextEditingController();
-  final _addressController = TextEditingController();
+  final TextEditingController _usernameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _dateOfBirthController = TextEditingController();
+  final TextEditingController _addressController = TextEditingController();
 
-  final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   String? _suggestUsername;
@@ -49,11 +49,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
     if (enteredUsername.isNotEmpty) {
       bool usernameExists = await _isUsernameTaken(enteredUsername);
       if (usernameExists) {
-        _suggestUsername = _generateSuggestedUsername(enteredUsername);
+        _suggestUsername = _generateSuggestedUsername(enteredUsername) as String?;
       } else {
         _suggestUsername = null;
       }
-      setState(() {}); // Update UI to show suggestion
+      setState(() {});
     }
   }
 
@@ -84,19 +84,22 @@ class _SignUpScreenState extends State<SignUpScreen> {
     return snapshot.docs.isNotEmpty;
   }
 
-  String _generateSuggestedUsername(String baseUsername) {
+  Future<String> _generateSuggestedUsername(String baseUsername) async {
     String suggestedUsername = baseUsername;
     int suffix = 1;
-    while (_suggestUsernameExists(suggestedUsername)) {
+    while (await _suggestUsernameExists(suggestedUsername)) {
       suffix++;
       suggestedUsername = '$baseUsername$suffix';
     }
     return suggestedUsername;
   }
 
-  bool _suggestUsernameExists(String username) {
-    // Check if the suggested username exists in Firestore
-    return false; // Implement your logic here
+  Future<bool> _suggestUsernameExists(String username) async {
+    QuerySnapshot<Map<String, dynamic>> snapshot = await _firestore
+        .collection('users')
+        .where('username', isEqualTo: username)
+        .get();
+    return snapshot.docs.isNotEmpty;
   }
 
   Future<void> _signUp() async {
@@ -105,27 +108,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
     }
 
     try {
-      UserCredential userCredential =
-          await _auth.createUserWithEmailAndPassword(
+      final userModel = await UserModel.signUp(
+        username: _suggestUsername ?? _usernameController.text.trim(),
         email: _emailController.text.trim(),
         password: _passwordController.text,
+        name: _nameController.text.trim(),
+        dateOfBirth: _dateOfBirthController.text.trim(),
+        address: _addressController.text.trim(),
       );
 
-      User? user = userCredential.user;
-
-      if (user != null) {
-        String username = _suggestUsername ?? _usernameController.text.trim();
-
-        await _firestore.collection('users').doc(user.uid).set({
-          'userId': user.uid,
-          'username': username,
-          'email': _emailController.text.trim(),
-          'name': _nameController.text.trim(),
-          'dateOfBirth': _dateOfBirthController.text.trim(),
-          'address': _addressController.text.trim(),
-        });
-
-        _showSuccessDialog();
+      if (userModel != null) {
+        _showSuccessDialog(userModel);
       } else {
         throw FirebaseAuthException(
           code: 'user-null',
@@ -176,7 +169,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
   }
 
-  void _showSuccessDialog() {
+  void _showSuccessDialog(UserModel user) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -189,7 +182,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
               onPressed: () {
                 Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(builder: (context) => HomeScreen()),
+                  MaterialPageRoute(
+                      builder: (context) => HomeScreen(user: user)),
                 );
               },
             ),

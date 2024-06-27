@@ -75,20 +75,19 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Leaderboard'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-        ),
+        backgroundColor: Colors.deepPurple,
+        elevation: 0,
         actions: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: Center(
               child: Text(
                 username,
-                style:
-                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
               ),
             ),
           ),
@@ -131,41 +130,27 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            IconButton(
-              icon: const Icon(Icons.home, color: Colors.white),
-              onPressed: () {
-                Navigator.of(context).popUntil((route) => route.isFirst);
-              },
-            ),
-            IconButton(
-              icon: const Icon(Icons.category, color: Colors.white),
-              onPressed: () {
-                Navigator.of(context).pushReplacement(MaterialPageRoute(
-                    builder: (context) => CategoriesScreen()));
-              },
-            ),
-            IconButton(
-              icon: const Icon(Icons.star, color: Colors.white),
-              onPressed: () {
-                Navigator.of(context).pushReplacement(MaterialPageRoute(
-                    builder: (context) => HighscoresScreen()));
-              },
-            ),
-            IconButton(
-              icon: const Icon(Icons.settings, color: Colors.white),
-              onPressed: () {
-                Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(builder: (context) => SettingsScreen()));
-              },
-            ),
-            IconButton(
-                icon: const Icon(Icons.person, color: Colors.white),
-                onPressed: () {
-                  Navigator.of(context).pushReplacement(MaterialPageRoute(
-                      builder: (context) => ProfileScreen(
-                            username: 'username',
-                          )));
-                }),
+            _buildBottomNavItem(Icons.home, 'Home', () {
+              Navigator.of(context).popUntil((route) => route.isFirst);
+            }),
+            _buildBottomNavItem(Icons.category, 'Categories', () {
+              Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(builder: (context) => CategoriesScreen()));
+            }),
+            _buildBottomNavItem(Icons.star, 'Highscores', () {
+              Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(builder: (context) => HighscoresScreen()));
+            }),
+            _buildBottomNavItem(Icons.settings, 'Settings', () {
+              Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(builder: (context) => SettingsScreen()));
+            }),
+            _buildBottomNavItem(Icons.person, 'Profile', () {
+              Navigator.of(context).pushReplacement(MaterialPageRoute(
+                  builder: (context) => ProfileScreen(
+                        username: username,
+                      )));
+            }),
           ],
         ),
       ),
@@ -175,35 +160,79 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
   Widget _buildLeaderboardItem(
       int rank, String name, int score, String accuracy) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(10),
-        color: Colors.blue[100],
+        borderRadius: BorderRadius.circular(12),
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.3),
+            spreadRadius: 2,
+            blurRadius: 5,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             'Rank: $rank',
-            style: const TextStyle(fontSize: 16),
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
             'Name: $name',
-            style: const TextStyle(fontSize: 16),
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+            ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 4),
           Text(
             'Score: $score',
-            style: const TextStyle(fontSize: 16),
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+            ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 4),
           Text(
             'Accuracy: $accuracy%',
-            style: const TextStyle(fontSize: 16),
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              color: Colors.green,
+            ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildBottomNavItem(
+      IconData icon, String label, VoidCallback onPressed) {
+    return Expanded(
+      child: InkWell(
+        onTap: onPressed,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: Colors.white),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

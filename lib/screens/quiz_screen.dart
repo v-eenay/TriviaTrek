@@ -6,12 +6,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
 
-void main() {
-  runApp(const MaterialApp(
-    home: QuizScreen(apiUrl: 'your_quiz_api_url_here'),
-  ));
-}
-
 class QuizScreen extends StatefulWidget {
   final String apiUrl;
 
@@ -154,50 +148,82 @@ class _QuizScreenState extends State<QuizScreen> {
 
     User? user = FirebaseAuth.instance.currentUser;
     if (user != null && _answeredQuestions.isNotEmpty) {
-      double accuracy = (_score / _answeredQuestions.length) * 100;
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .collection('quiz_history')
-          .add({
-        'score': _score,
-        'totalQuestions': _answeredQuestions.length,
-        'accuracy': accuracy.toStringAsFixed(2),
-        'timestamp': Timestamp.now(),
-        'questions': _answeredQuestions.map((q) => q.toMap()).toList(),
-        'interrupted': interrupted,
-      });
-      await _updateOverallAccuracy(user.uid);
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (context) => QuizResultScreen(
-            score: _score,
-            totalQuestions: _answeredQuestions.length,
-            accuracy: accuracy,
-            questions: _answeredQuestions,
+      try {
+        double accuracy = (_score / _answeredQuestions.length) * 100;
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .collection('quiz_history')
+            .add({
+          'score': _score,
+          'totalQuestions': _answeredQuestions.length,
+          'accuracy': accuracy.toStringAsFixed(2),
+          'timestamp': Timestamp.now(),
+          'questions': _answeredQuestions.map((q) => q.toMap()).toList(),
+          'interrupted': interrupted,
+        });
+        await _updateOverallAccuracy(user.uid);
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => QuizResultScreen(
+              score: _score,
+              totalQuestions: _answeredQuestions.length,
+              accuracy: accuracy,
+              questions: _answeredQuestions,
+            ),
           ),
-        ),
-      );
+        );
+      } catch (e) {
+        _handleSaveError('Failed to save quiz result. Please try again.');
+      }
+    } else {
+      _handleSaveError('No quiz data to save.');
     }
   }
 
   Future<void> _updateOverallAccuracy(String userId) async {
-    QuerySnapshot<Map<String, dynamic>> snapshot = await FirebaseFirestore
-        .instance
-        .collection('users')
-        .doc(userId)
-        .collection('quiz_history')
-        .get();
-    double totalScore = 0;
-    int totalQuestions = 0;
-    for (var doc in snapshot.docs) {
-      totalScore += doc.data()['score'] as num;
-      totalQuestions += doc.data()['totalQuestions'] as int;
+    try {
+      QuerySnapshot<Map<String, dynamic>> snapshot = await FirebaseFirestore
+          .instance
+          .collection('users')
+          .doc(userId)
+          .collection('quiz_history')
+          .get();
+      double totalScore = 0;
+      int totalQuestions = 0;
+      for (var doc in snapshot.docs) {
+        totalScore += doc.data()['score'] as num;
+        totalQuestions += doc.data()['totalQuestions'] as int;
+      }
+      double overallAccuracy = (totalScore / totalQuestions) * 100;
+      await FirebaseFirestore.instance.collection('users').doc(userId).update({
+        'overallAccuracy': overallAccuracy.toStringAsFixed(2),
+      });
+    } catch (e) {
+      _handleSaveError('Failed to update overall accuracy.');
     }
-    double overallAccuracy = (totalScore / totalQuestions) * 100;
-    await FirebaseFirestore.instance.collection('users').doc(userId).update({
-      'overallAccuracy': overallAccuracy.toStringAsFixed(2),
-    });
+  }
+
+  void _handleSaveError(String message) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Error'),
+          content: Text(message),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).pop();
+              },
+              child: Text('Go Back'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -205,7 +231,8 @@ class _QuizScreenState extends State<QuizScreen> {
     if (_isQuestionLoading) {
       return Scaffold(
         appBar: AppBar(
-          title: const Text('Quiz'),
+          title: const Text('Quiz', style: TextStyle(color: Colors.white)),
+          backgroundColor: Colors.deepPurple,
         ),
         body: Center(
           child: CircularProgressIndicator(),
@@ -216,7 +243,8 @@ class _QuizScreenState extends State<QuizScreen> {
     if (_questions.isEmpty) {
       return Scaffold(
         appBar: AppBar(
-          title: const Text('Quiz'),
+          title: const Text('Quiz', style: TextStyle(color: Colors.white)),
+          backgroundColor: Colors.deepPurple,
         ),
         body: Center(
           child: Column(
@@ -256,7 +284,8 @@ class _QuizScreenState extends State<QuizScreen> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: Text('Question ${_currentIndex + 1} / ${_questions.length}'),
+          title: Text('Question ${_currentIndex + 1} / ${_questions.length}',
+              style: TextStyle(color: Colors.white)),
           backgroundColor: Colors.deepPurple,
         ),
         body: Padding(
@@ -286,10 +315,8 @@ class _QuizScreenState extends State<QuizScreen> {
                   .map((option) => _buildOption(option))
                   .toList(),
               const SizedBox(height: 20),
-              CircularCountdown(
-                secondsRemaining: _secondsRemaining,
-              ),
-              const SizedBox(height: 8),
+              _buildCircularCountdown(),
+              const SizedBox(height: 16),
               Text(
                 'Time Remaining: $_secondsRemaining seconds',
                 style: const TextStyle(fontSize: 16),
@@ -320,6 +347,8 @@ class _QuizScreenState extends State<QuizScreen> {
           _nextQuestion();
         },
         style: ElevatedButton.styleFrom(
+          foregroundColor: Colors.white,
+          backgroundColor: Colors.deepPurple,
           padding: const EdgeInsets.all(16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
@@ -332,16 +361,8 @@ class _QuizScreenState extends State<QuizScreen> {
       ),
     );
   }
-}
 
-class CircularCountdown extends StatelessWidget {
-  final int secondsRemaining;
-
-  const CircularCountdown({Key? key, required this.secondsRemaining})
-      : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildCircularCountdown() {
     return Center(
       child: Stack(
         alignment: Alignment.center,
@@ -350,16 +371,16 @@ class CircularCountdown extends StatelessWidget {
             width: 100,
             height: 100,
             child: CircularProgressIndicator(
-              value: secondsRemaining / 20,
+              value: _secondsRemaining / 20,
               backgroundColor: Colors.grey[300],
               valueColor: AlwaysStoppedAnimation<Color>(
-                secondsRemaining > 5 ? Colors.green : Colors.red,
+                _secondsRemaining > 5 ? Colors.green : Colors.red,
               ),
               strokeWidth: 8,
             ),
           ),
           Text(
-            '$secondsRemaining',
+            '$_secondsRemaining',
             style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
         ],
@@ -386,7 +407,8 @@ class QuizResultScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Quiz Result'),
+        title: const Text('Quiz Result', style: TextStyle(color: Colors.white)),
+        backgroundColor: Colors.deepPurple,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -425,6 +447,8 @@ class QuizResultScreen extends StatelessWidget {
                         Navigator.of(context).pop();
                       },
                       style: ElevatedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        backgroundColor: Colors.deepPurple,
                         padding:
                             EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                         shape: RoundedRectangleBorder(
@@ -445,6 +469,8 @@ class QuizResultScreen extends StatelessWidget {
                         );
                       },
                       style: ElevatedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        backgroundColor: Colors.deepPurple,
                         padding:
                             EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                         shape: RoundedRectangleBorder(
@@ -474,7 +500,9 @@ class QuizReviewScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Questions Review'),
+        title: const Text('Questions Review',
+            style: TextStyle(color: Colors.white)),
+        backgroundColor: Colors.deepPurple,
       ),
       body: ListView.builder(
         itemCount: questions.length,

@@ -7,6 +7,8 @@ import 'package:quiz_app_enrichment/screens/home_screen.dart';
 import 'package:quiz_app_enrichment/screens/leaderboard_screen.dart';
 import 'package:quiz_app_enrichment/screens/profile_screen.dart';
 
+import '../models/user_model.dart';
+
 class QuizHistoryScreen extends StatefulWidget {
   const QuizHistoryScreen({Key? key}) : super(key: key);
 
@@ -135,7 +137,15 @@ class _QuizHistoryScreenState extends State<QuizHistoryScreen> {
           children: [
             _buildBottomNavItem(Icons.home, 'Home', () {
               Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (context) => HomeScreen()),
+                MaterialPageRoute(
+                    builder: (context) => HomeScreen(
+                        user: UserModel(
+                            userId: '',
+                            username: '',
+                            email: '',
+                            name: '',
+                            dateOfBirth: '',
+                            address: ''))),
               );
             }),
             _buildBottomNavItem(Icons.category, 'Categories', () {

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:quiz_app_enrichment/models/user_model.dart';
 import 'package:quiz_app_enrichment/screens/categories_screen.dart';
 import 'package:quiz_app_enrichment/screens/profile_screen.dart';
 import 'package:quiz_app_enrichment/screens/settings_screen.dart';
@@ -9,58 +9,32 @@ import 'package:quiz_app_enrichment/screens/leaderboard_screen.dart';
 import 'package:quiz_app_enrichment/screens/quiz_screen.dart';
 import 'package:quiz_app_enrichment/screens/login_screen.dart';
 import 'package:quiz_app_enrichment/screens/quiz_history_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({Key? key});
+  final UserModel user;
+
+  const HomeScreen({Key? key, required this.user}) : super(key: key);
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  String fullName = '';
-  String profilePicture = '';
+  late String fullName;
+  String profilePicture = ''; // Initialize profilePicture here
   bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadUserData();
-  }
-
-  Future<void> _loadUserData() async {
-    User? user = FirebaseAuth.instance.currentUser;
-
-    if (user != null) {
-      try {
-        DocumentSnapshot<Map<String, dynamic>> snapshot =
-            await FirebaseFirestore.instance
-                .collection('users')
-                .doc(user.uid)
-                .get();
-
-        if (snapshot.exists) {
-          setState(() {
-            fullName = snapshot.data()?['name'] ?? 'User';
-            profilePicture = snapshot.data()?['profilePicture'] ?? '';
-            isLoading = false;
-          });
-        } else {
-          throw Exception('User data not found');
-        }
-      } catch (e) {
-        print('Error loading user data: $e');
-        setState(() {
-          fullName = 'User';
-          isLoading = false;
-        });
-      }
-    } else {
-      setState(() {
-        fullName = 'User';
-        isLoading = false;
-      });
+    fullName = widget.user.name;
+    // Initialize profilePicture with first initial of name if name is not empty
+    if (fullName.isNotEmpty) {
+      profilePicture = fullName[0]
+          .toUpperCase(); // Assuming first character as profile picture
     }
+    isLoading = false;
   }
 
   @override
@@ -100,15 +74,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     CircleAvatar(
                       radius: 16,
-                      backgroundImage: profilePicture.isNotEmpty
-                          ? NetworkImage(profilePicture)
-                          : null,
-                      child: profilePicture.isEmpty
-                          ? Text(
-                              fullName.isNotEmpty ? fullName[0] : 'U',
-                              style: const TextStyle(fontSize: 24),
-                            )
-                          : null,
+                      backgroundColor:
+                          Colors.white, // Provide a background color
+                      child: Text(
+                        profilePicture,
+                        style: const TextStyle(fontSize: 24),
+                      ),
                     ),
                     const SizedBox(width: 8),
                     Text(
@@ -213,7 +184,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             icon: Icons.settings,
                             gradientColors: [Colors.blue, Colors.blueAccent],
                             onPressed: () =>
-                                _navigateTo(context, const SettingsScreen()),
+                                _navigateTo(context, SettingsScreen()),
                           ),
                         ],
                       ),
@@ -242,15 +213,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   CircleAvatar(
                     radius: 30,
-                    backgroundImage: profilePicture.isNotEmpty
-                        ? NetworkImage(profilePicture)
-                        : null,
-                    child: profilePicture.isEmpty
-                        ? Text(
-                            fullName.isNotEmpty ? fullName[0] : 'U',
-                            style: const TextStyle(fontSize: 40),
-                          )
-                        : null,
+                    backgroundColor: Colors.white, // Provide a background color
+                    child: Text(
+                      profilePicture,
+                      style: const TextStyle(fontSize: 40),
+                    ),
                   ),
                   const SizedBox(height: 10),
                   Text(
@@ -278,7 +245,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 () => _navigateTo(context, ProfileScreen(username: fullName))),
             const Divider(color: Colors.white),
             _buildDrawerItem(context, 'Settings', Icons.settings,
-                () => _navigateTo(context, const SettingsScreen())),
+                () => _navigateTo(context, SettingsScreen())),
             _buildDrawerItem(
                 context, 'Logout', Icons.exit_to_app, () => _logout(context)),
           ],
@@ -370,9 +337,35 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _logout(BuildContext context) async {
+    // Clear local storage (cache)
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
+
     await FirebaseAuth.instance.signOut();
     Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (context) => LoginScreen()),
+      MaterialPageRoute(
+          builder: (context) => LoginScreen(onSignUp: (username, email,
+                  password, name, dateOfBirth, address) async {
+                try {
+                  UserModel? newUser = await UserModel.signUp(
+                    username: username,
+                    email: email,
+                    password: password,
+                    name: name,
+                    dateOfBirth: dateOfBirth,
+                    address: address,
+                  );
+                  if (newUser != null) {
+                    setState(() {
+                      fullName = newUser.name;
+                      profilePicture = newUser.profilePicture;
+                    });
+                  }
+                } catch (e) {
+                  // Handle sign-up errors here
+                  print('Sign-up error: $e');
+                }
+              })),
       (Route<dynamic> route) => false,
     );
   }

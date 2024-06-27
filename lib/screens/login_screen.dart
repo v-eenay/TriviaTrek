@@ -1,24 +1,38 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../models/user_model.dart';
 import 'home_screen.dart';
 import 'signup_screen.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({Key? key}) : super(key: key);
+  const LoginScreen({Key? key, required Future<Null> Function(dynamic username, dynamic email, dynamic password, dynamic name, dynamic dateOfBirth, dynamic address) onSignUp}) : super(key: key);
 
   @override
   _LoginScreenState createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _usernameOrEmailController = TextEditingController();
-  final _passwordController = TextEditingController();
-
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final TextEditingController _usernameOrEmailController =
+      TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
 
   bool _showPassword = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkCachedUser();
+  }
+
+  Future<void> _checkCachedUser() async {
+    final userModel = await UserModel.getUserFromLocal();
+    if (userModel != null) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => HomeScreen(user: userModel)),
+      );
+    }
+  }
 
   void _togglePasswordVisibility() {
     setState(() {
@@ -31,38 +45,11 @@ class _LoginScreenState extends State<LoginScreen> {
     final password = _passwordController.text;
 
     try {
-      QuerySnapshot<Map<String, dynamic>> querySnapshot;
+      final userModel = await UserModel.login(usernameOrEmail, password);
 
-      if (usernameOrEmail.contains('@')) {
-        querySnapshot = await _firestore
-            .collection('users')
-            .where('email', isEqualTo: usernameOrEmail)
-            .limit(1)
-            .get();
-      } else {
-        querySnapshot = await _firestore
-            .collection('users')
-            .where('username', isEqualTo: usernameOrEmail)
-            .limit(1)
-            .get();
-      }
-
-      if (querySnapshot.docs.isEmpty) {
-        throw FirebaseAuthException(
-            code: 'user-not-found',
-            message: 'No user found with this username or email.');
-      }
-
-      String email = querySnapshot.docs.first.get('email');
-
-      UserCredential userCredential = await _auth.signInWithEmailAndPassword(
-          email: email, password: password);
-
-      final user = userCredential.user;
-
-      if (user != null) {
+      if (userModel != null) {
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => HomeScreen()),
+          MaterialPageRoute(builder: (context) => HomeScreen(user: userModel)),
         );
       } else {
         throw FirebaseAuthException(
@@ -115,7 +102,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _resetPassword(String email) async {
     try {
-      await _auth.sendPasswordResetEmail(email: email);
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Password reset email sent to $email.'),
@@ -125,6 +112,42 @@ class _LoginScreenState extends State<LoginScreen> {
     } catch (e) {
       _showErrorDialog(_getErrorMessage(e));
     }
+  }
+
+  void _showResetPasswordDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Reset Password'),
+          content: TextField(
+            controller: _emailController,
+            decoration: InputDecoration(
+              labelText: 'Enter your email',
+              prefixIcon: Icon(Icons.email),
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: Text('Reset'),
+              onPressed: () {
+                final email = _emailController.text.trim();
+                if (email.isNotEmpty) {
+                  _resetPassword(email);
+                  Navigator.of(context).pop();
+                }
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -208,15 +231,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               SizedBox(height: 10),
               TextButton(
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => ResetPasswordScreen(
-                        onResetPassword: _resetPassword,
-                      ),
-                    ),
-                  );
-                },
+                onPressed: _showResetPasswordDialog,
                 child: Text(
                   'Forgot Password?',
                   style: TextStyle(
@@ -244,83 +259,6 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class ResetPasswordScreen extends StatefulWidget {
-  final Function(String) onResetPassword;
-
-  const ResetPasswordScreen({Key? key, required this.onResetPassword})
-      : super(key: key);
-
-  @override
-  _ResetPasswordScreenState createState() => _ResetPasswordScreenState();
-}
-
-class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
-  final _emailController = TextEditingController();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Reset Password',
-          style: TextStyle(color: Colors.white),
-        ),
-        backgroundColor: Colors.deepPurple,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            SizedBox(height: 20),
-            Text(
-              'Reset Your Password',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.deepPurple,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: 20),
-            TextField(
-              controller: _emailController,
-              decoration: InputDecoration(
-                labelText: 'Enter your email',
-                prefixIcon: Icon(Icons.email),
-              ),
-            ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                String email = _emailController.text.trim();
-                widget.onResetPassword(email);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.deepPurple,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10.0),
-                ),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text(
-                  'Reset Password',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ),
-          ],
         ),
       ),
     );
