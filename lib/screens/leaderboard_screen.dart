@@ -34,42 +34,43 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
   }
 
   Future<List<Map<String, dynamic>>> _fetchLeaderboard() async {
-    final snapshot =
-        await FirebaseFirestore.instance.collection('quiz_history').get();
-    final userScores = <String, int>{};
-    final userQuestions = <String, int>{};
-    final userCorrectAnswers = <String, int>{};
+    // Fetch all users
+    final usersSnapshot =
+        await FirebaseFirestore.instance.collection('users').get();
+    final List<Map<String, dynamic>> leaderboard = [];
 
-    for (var doc in snapshot.docs) {
-      final data = doc.data();
-      final user = data['user'];
-      final score = data['score'] as int;
-      final correctAnswers = data['correct_answers'] as int;
-      final totalQuestions = data['total_questions'] as int;
+    for (var userDoc in usersSnapshot.docs) {
+      final userId = userDoc.id;
+      final userData = userDoc.data();
+      final username = userData['username'] ?? '';
 
-      userScores[user] = (userScores[user] ?? 0) + score;
-      userQuestions[user] = (userQuestions[user] ?? 0) + totalQuestions;
-      userCorrectAnswers[user] =
-          (userCorrectAnswers[user] ?? 0) + correctAnswers;
-    }
+      // Calculate total score from quiz history for the user
+      final quizHistorySnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .collection('quiz_history')
+          .get();
 
-    final leaderboard = userScores.keys.map((user) {
-      final totalScore = userScores[user]!;
-      final totalQuestions = userQuestions[user]!;
-      final correctAnswers = userCorrectAnswers[user]!;
-      final accuracy = totalQuestions > 0
-          ? (correctAnswers / totalQuestions * 100).toStringAsFixed(2)
-          : '0.00';
+      int totalScore = 0;
 
-      return {
-        'name': user,
+      quizHistorySnapshot.docs.forEach((historyDoc) {
+        final data = historyDoc.data();
+        totalScore += (data['score'] ?? 0) as int;
+      });
+
+      // Calculate accuracy from users collection
+      final accuracy = userData['overallAccuracy'] ?? '0.00';
+
+      leaderboard.add({
+        'userId': userId,
+        'name': username,
         'score': totalScore,
         'accuracy': accuracy,
-      };
-    }).toList();
+      });
+    }
 
-    leaderboard
-        .sort((a, b) => (b['score'] as int).compareTo(a['score'] as int));
+    // Sort leaderboard by score (descending)
+    leaderboard.sort((a, b) => b['score'].compareTo(a['score']));
 
     return leaderboard.take(10).toList();
   }
@@ -116,12 +117,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
               itemCount: leaderboard.length,
               itemBuilder: (context, index) {
                 final entry = leaderboard[index];
-                final rank = index == 0
-                    ? 1
-                    : (leaderboard[index - 1]['score'] == entry['score']
-                        ? leaderboard[index - 1]['rank']
-                        : index + 1);
-                entry['rank'] = rank;
+                final rank = index + 1;
                 final name = entry['name'];
                 final score = entry['score'];
                 final accuracy = entry['accuracy'];
