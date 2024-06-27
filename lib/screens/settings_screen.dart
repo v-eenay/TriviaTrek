@@ -7,14 +7,19 @@ import 'package:quiz_app_enrichment/screens/highscores_screen.dart';
 import 'package:quiz_app_enrichment/screens/home_screen.dart';
 import 'package:quiz_app_enrichment/screens/leaderboard_screen.dart';
 import 'package:quiz_app_enrichment/screens/profile_screen.dart';
+import 'package:quiz_app_enrichment/screens/quiz_history_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Settings'),
+        title: const Text(
+          'Settings',
+          style: TextStyle(color: Colors.white),
+        ),
         backgroundColor: Colors.deepPurple,
+        iconTheme: IconThemeData(color: Colors.white),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -49,67 +54,18 @@ class SettingsScreen extends StatelessWidget {
           ],
         ),
       ),
-      bottomNavigationBar: BottomAppBar(
-        color: Colors.deepPurple,
-        elevation: 0,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            IconButton(
-              icon: const Icon(Icons.home, color: Colors.white),
-              onPressed: () {
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(
-                      builder: (context) => HomeScreen(
-                          user: UserModel(
-                              userId: '',
-                              username: '',
-                              email: '',
-                              name: '',
-                              dateOfBirth: '',
-                              address: ''))),
-                );
-              },
-            ),
-            IconButton(
-              icon: const Icon(Icons.category, color: Colors.white),
-              onPressed: () {
-                Navigator.of(context).pushReplacement(MaterialPageRoute(
-                    builder: (context) => CategoriesScreen()));
-              },
-            ),
-            IconButton(
-              icon: const Icon(Icons.star, color: Colors.white),
-              onPressed: () {
-                Navigator.of(context).pushReplacement(MaterialPageRoute(
-                    builder: (context) => HighscoresScreen()));
-              },
-            ),
-            IconButton(
-              icon: const Icon(Icons.leaderboard, color: Colors.white),
-              onPressed: () {
-                Navigator.of(context).pushReplacement(MaterialPageRoute(
-                    builder: (context) => LeaderboardScreen()));
-              },
-            ),
-            IconButton(
-              icon: const Icon(Icons.person, color: Colors.white),
-              onPressed: () {
-                Navigator.of(context).pushReplacement(MaterialPageRoute(
-                    builder: (context) => ProfileScreen(username: 'username')));
-              },
-            ),
-          ],
-        ),
-      ),
+      bottomNavigationBar: _buildBottomNavigationBar(context),
     );
   }
 
   Widget _buildSettingsItem(BuildContext context, String title, IconData icon,
       VoidCallback onPressed) {
     return ListTile(
-      title: Text(title),
-      leading: Icon(icon),
+      title: Text(
+        title,
+        style: TextStyle(fontSize: 18, color: Colors.black87),
+      ),
+      leading: Icon(icon, color: Colors.deepPurple),
       onTap: onPressed,
     );
   }
@@ -162,6 +118,83 @@ class SettingsScreen extends StatelessWidget {
       ),
     );
   }
+
+  Widget _buildBottomNavigationBar(BuildContext context) {
+    return BottomAppBar(
+      color: Colors.deepPurple,
+      elevation: 0,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _buildBottomNavItem(context, Icons.home, '', () async {
+            User? user = FirebaseAuth.instance.currentUser;
+            if (user != null) {
+              DocumentSnapshot<Map<String, dynamic>> snapshot =
+                  await FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(user.uid)
+                      .get();
+              UserModel userModel = UserModel(
+                userId: user.uid,
+                username: snapshot.data()?['username'] ?? '',
+                email: user.email ?? '',
+                name: snapshot.data()?['name'] ?? '',
+                dateOfBirth: snapshot.data()?['dateOfBirth'] ?? '',
+                address: snapshot.data()?['address'] ?? '',
+              );
+              Navigator.of(context).pushReplacement(MaterialPageRoute(
+                  builder: (context) => HomeScreen(user: userModel)));
+            }
+          }),
+          _buildBottomNavItem(context, Icons.category, '', () {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (context) => CategoriesScreen()),
+            );
+          }),
+          _buildBottomNavItem(context, Icons.star, '', () {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (context) => HighscoresScreen()),
+            );
+          }),
+          _buildBottomNavItem(context, Icons.leaderboard, '', () {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (context) => LeaderboardScreen()),
+            );
+          }),
+          _buildBottomNavItem(context, Icons.history, '', () {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (context) => QuizHistoryScreen()),
+            );
+          }),
+          _buildBottomNavItem(context, Icons.person, '', () {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                  builder: (context) => ProfileScreen(username: 'username')),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBottomNavItem(BuildContext context, IconData icon, String label,
+      VoidCallback onPressed) {
+    return Expanded(
+      child: InkWell(
+        onTap: onPressed,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: Colors.white),
+            Text(
+              label,
+              style: TextStyle(color: Colors.white, fontSize: 12),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class ChangePasswordScreen extends StatelessWidget {
@@ -173,7 +206,12 @@ class ChangePasswordScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Change Password'),
+        title: const Text(
+          'Change Password',
+          style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor: Colors.deepPurple,
+        iconTheme: IconThemeData(color: Colors.white),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
@@ -213,7 +251,14 @@ class ChangePasswordScreen extends StatelessWidget {
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: () => _changePassword(context),
-                child: const Text('Change Password'),
+                style: ElevatedButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  backgroundColor: Colors.deepPurple,
+                ),
+                child: const Text(
+                  'Change Password',
+                  style: TextStyle(color: Colors.white),
+                ),
               ),
             ],
           ),
@@ -274,7 +319,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Edit Profile'),
+        title: const Text(
+          'Edit Profile',
+          style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor: Colors.deepPurple,
+        iconTheme: IconThemeData(color: Colors.white),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
@@ -312,6 +362,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: () => _editProfile(context),
+                style: ElevatedButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  backgroundColor: Colors.deepPurple,
+                ),
                 child: const Text('Save Profile'),
               ),
             ],
@@ -349,8 +403,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Profile updated successfully.')),
           );
-          // Optionally, you can pop the context to return to the previous screen
-          // Navigator.of(context).pop();
+          Navigator.of(context).pop();
         }
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(

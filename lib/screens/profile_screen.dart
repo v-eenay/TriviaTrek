@@ -4,7 +4,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:quiz_app_enrichment/screens/categories_screen.dart';
 import 'package:quiz_app_enrichment/screens/highscores_screen.dart';
 import 'package:quiz_app_enrichment/screens/leaderboard_screen.dart';
+import 'package:quiz_app_enrichment/screens/quiz_history_screen.dart';
 import 'package:quiz_app_enrichment/screens/settings_screen.dart';
+import 'package:quiz_app_enrichment/screens/home_screen.dart';
+import '../models/user_model.dart';
 
 class ProfileScreen extends StatefulWidget {
   final String username;
@@ -90,12 +93,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Profile'),
+        title: const Text('Profile', style: TextStyle(color: Colors.white)),
         centerTitle: true,
         backgroundColor: Colors.deepPurple,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: _isLoading
-          ? Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -115,7 +119,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
+        gradient: const LinearGradient(
           colors: [Colors.deepPurple, Colors.deepPurpleAccent],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -196,22 +200,43 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          _buildBottomNavItem(Icons.home, 'Home', () {
-            Navigator.of(context).popUntil((route) => route.isFirst);
+          _buildBottomNavItem(Icons.home, () async {
+            User? user = FirebaseAuth.instance.currentUser;
+            if (user != null) {
+              DocumentSnapshot<Map<String, dynamic>> snapshot =
+                  await FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(user.uid)
+                      .get();
+              UserModel userModel = UserModel(
+                userId: user.uid,
+                username: snapshot.data()?['username'] ?? '',
+                email: user.email ?? '',
+                name: snapshot.data()?['name'] ?? '',
+                dateOfBirth: snapshot.data()?['dateOfBirth'] ?? '',
+                address: snapshot.data()?['address'] ?? '',
+              );
+              Navigator.of(context).pushReplacement(MaterialPageRoute(
+                  builder: (context) => HomeScreen(user: userModel)));
+            }
           }),
-          _buildBottomNavItem(Icons.category, 'Categories', () {
+          _buildBottomNavItem(Icons.category, () {
             Navigator.of(context).pushReplacement(
                 MaterialPageRoute(builder: (context) => CategoriesScreen()));
           }),
-          _buildBottomNavItem(Icons.star, 'Highscores', () {
+          _buildBottomNavItem(Icons.star, () {
             Navigator.of(context).pushReplacement(
                 MaterialPageRoute(builder: (context) => HighscoresScreen()));
           }),
-          _buildBottomNavItem(Icons.leaderboard, 'Leaderboard', () {
+          _buildBottomNavItem(Icons.leaderboard, () {
             Navigator.of(context).pushReplacement(
                 MaterialPageRoute(builder: (context) => LeaderboardScreen()));
           }),
-          _buildBottomNavItem(Icons.settings, 'Settings', () {
+          _buildBottomNavItem(Icons.history, () {
+            Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (context) => QuizHistoryScreen()));
+          }),
+          _buildBottomNavItem(Icons.settings, () {
             Navigator.of(context).pushReplacement(
                 MaterialPageRoute(builder: (context) => SettingsScreen()));
           }),
@@ -220,20 +245,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildBottomNavItem(
-      IconData icon, String label, VoidCallback onPressed) {
+  Widget _buildBottomNavItem(IconData icon, VoidCallback onPressed) {
     return Expanded(
       child: InkWell(
         onTap: onPressed,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: Colors.white),
-            Text(
-              label,
-              style: TextStyle(color: Colors.white, fontSize: 12),
-            ),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Icon(icon, color: Colors.white),
         ),
       ),
     );

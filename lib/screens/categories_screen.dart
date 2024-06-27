@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:quiz_app_enrichment/models/user_model.dart';
+import 'package:quiz_app_enrichment/screens/quiz_history_screen.dart';
 import 'package:quiz_app_enrichment/screens/quiz_screen.dart';
 import 'package:quiz_app_enrichment/screens/home_screen.dart';
 import 'package:quiz_app_enrichment/screens/profile_screen.dart';
@@ -41,7 +42,6 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
       appBar: AppBar(
         title: Text(
           'Categories',
-          style: TextStyle(fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.deepPurple,
         foregroundColor: Colors.white,
@@ -137,12 +137,15 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
             _buildBottomNavItem(Icons.leaderboard, 'Leaderboard', () {
               _navigateTo(context, LeaderboardScreen());
             }),
-            _buildBottomNavItem(Icons.settings, 'Settings', () {
-              _navigateTo(context, SettingsScreen());
+            _buildBottomNavItem(Icons.history, 'History', () {
+              _navigateToReplacement(context, QuizHistoryScreen());
             }),
             _buildBottomNavItem(Icons.person, 'Profile', () {
               _navigateToReplacement(
                   context, ProfileScreen(username: currentUser.username));
+            }),
+            _buildBottomNavItem(Icons.settings, 'Settings', () {
+              _navigateTo(context, SettingsScreen());
             }),
           ],
         ),
@@ -414,8 +417,8 @@ class _QuizOptionsScreenState extends State<QuizOptionsScreen> {
       child: ElevatedButton(
         onPressed: _startQuiz,
         style: ButtonStyle(
-          backgroundColor: MaterialStateProperty.all(Colors.deepPurple),
-          shape: MaterialStateProperty.all(
+          backgroundColor: WidgetStateProperty.all(Colors.deepPurple),
+          shape: WidgetStateProperty.all(
             RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(10),
             ),

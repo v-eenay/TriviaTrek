@@ -233,6 +233,9 @@ class _QuizScreenState extends State<QuizScreen> {
         appBar: AppBar(
           title: const Text('Quiz', style: TextStyle(color: Colors.white)),
           backgroundColor: Colors.deepPurple,
+          iconTheme: IconThemeData(color: Colors.white),
+          titleTextStyle: TextStyle(color: Colors.white),
+          actionsIconTheme: IconThemeData(color: Colors.white),
         ),
         body: Center(
           child: CircularProgressIndicator(),
@@ -245,6 +248,9 @@ class _QuizScreenState extends State<QuizScreen> {
         appBar: AppBar(
           title: const Text('Quiz', style: TextStyle(color: Colors.white)),
           backgroundColor: Colors.deepPurple,
+          iconTheme: IconThemeData(color: Colors.white),
+          titleTextStyle: TextStyle(color: Colors.white),
+          actionsIconTheme: IconThemeData(color: Colors.white),
         ),
         body: Center(
           child: Column(
@@ -287,6 +293,9 @@ class _QuizScreenState extends State<QuizScreen> {
           title: Text('Question ${_currentIndex + 1} / ${_questions.length}',
               style: TextStyle(color: Colors.white)),
           backgroundColor: Colors.deepPurple,
+          iconTheme: IconThemeData(color: Colors.white),
+          titleTextStyle: TextStyle(color: Colors.white),
+          actionsIconTheme: IconThemeData(color: Colors.white),
         ),
         body: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -409,6 +418,9 @@ class QuizResultScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Quiz Result', style: TextStyle(color: Colors.white)),
         backgroundColor: Colors.deepPurple,
+        iconTheme: IconThemeData(color: Colors.white),
+        titleTextStyle: TextStyle(color: Colors.white),
+        actionsIconTheme: IconThemeData(color: Colors.white),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -503,6 +515,9 @@ class QuizReviewScreen extends StatelessWidget {
         title: const Text('Questions Review',
             style: TextStyle(color: Colors.white)),
         backgroundColor: Colors.deepPurple,
+        iconTheme: IconThemeData(color: Colors.white),
+        titleTextStyle: TextStyle(color: Colors.white),
+        actionsIconTheme: IconThemeData(color: Colors.white),
       ),
       body: ListView.builder(
         itemCount: questions.length,

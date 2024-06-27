@@ -6,7 +6,7 @@ import 'package:quiz_app_enrichment/screens/highscores_screen.dart';
 import 'package:quiz_app_enrichment/screens/home_screen.dart';
 import 'package:quiz_app_enrichment/screens/leaderboard_screen.dart';
 import 'package:quiz_app_enrichment/screens/profile_screen.dart';
-
+import 'package:quiz_app_enrichment/screens/settings_screen.dart';
 import '../models/user_model.dart';
 
 class QuizHistoryScreen extends StatefulWidget {
@@ -69,6 +69,8 @@ class _QuizHistoryScreenState extends State<QuizHistoryScreen> {
           style: TextStyle(color: Colors.white),
         ),
         backgroundColor: Colors.deepPurple,
+        iconTheme: const IconThemeData(
+            color: Colors.white), // Ensuring the back button is white
       ),
       body: FutureBuilder<List<QuizHistory>>(
         future: _futureQuizHistory,
@@ -95,7 +97,7 @@ class _QuizHistoryScreenState extends State<QuizHistoryScreen> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: Card(
-                    elevation: 2,
+                    elevation: 3,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -103,7 +105,10 @@ class _QuizHistoryScreenState extends State<QuizHistoryScreen> {
                       contentPadding: const EdgeInsets.all(16),
                       title: Text(
                         'Score: ${history.score} / ${history.totalQuestions}',
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
                       ),
                       subtitle: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -111,15 +116,22 @@ class _QuizHistoryScreenState extends State<QuizHistoryScreen> {
                           const SizedBox(height: 8),
                           Text(
                             'Accuracy: ${history.accuracy}%',
-                            style: TextStyle(color: Colors.grey[700]),
+                            style: TextStyle(
+                              color: Colors.grey[700],
+                              fontSize: 14,
+                            ),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             'Date: ${_formatTimestamp(history.timestamp)}',
-                            style: TextStyle(color: Colors.grey[700]),
+                            style: TextStyle(
+                              color: Colors.grey[700],
+                              fontSize: 14,
+                            ),
                           ),
                         ],
                       ),
+                      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                       onTap: () => _navigateToQuestionsReview(context, history),
                     ),
                   ),
@@ -135,34 +147,45 @@ class _QuizHistoryScreenState extends State<QuizHistoryScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            _buildBottomNavItem(Icons.home, 'Home', () {
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(
-                    builder: (context) => HomeScreen(
-                        user: UserModel(
-                            userId: '',
-                            username: '',
-                            email: '',
-                            name: '',
-                            dateOfBirth: '',
-                            address: ''))),
-              );
+            _buildBottomNavItem(Icons.home, () async {
+              User? user = FirebaseAuth.instance.currentUser;
+              if (user != null) {
+                DocumentSnapshot<Map<String, dynamic>> snapshot =
+                    await FirebaseFirestore.instance
+                        .collection('users')
+                        .doc(user.uid)
+                        .get();
+                UserModel userModel = UserModel(
+                  userId: user.uid,
+                  username: snapshot.data()?['username'] ?? '',
+                  email: user.email ?? '',
+                  name: snapshot.data()?['name'] ?? '',
+                  dateOfBirth: snapshot.data()?['dateOfBirth'] ?? '',
+                  address: snapshot.data()?['address'] ?? '',
+                );
+                Navigator.of(context).pushReplacement(MaterialPageRoute(
+                    builder: (context) => HomeScreen(user: userModel)));
+              }
             }),
-            _buildBottomNavItem(Icons.category, 'Categories', () {
+            _buildBottomNavItem(Icons.category, () {
               Navigator.of(context).pushReplacement(
                   MaterialPageRoute(builder: (context) => CategoriesScreen()));
             }),
-            _buildBottomNavItem(Icons.star, 'Highscores', () {
+            _buildBottomNavItem(Icons.star, () {
               Navigator.of(context).pushReplacement(
                   MaterialPageRoute(builder: (context) => HighscoresScreen()));
             }),
-            _buildBottomNavItem(Icons.leaderboard, 'Leaderboard', () {
+            _buildBottomNavItem(Icons.leaderboard, () {
               Navigator.of(context).pushReplacement(
                   MaterialPageRoute(builder: (context) => LeaderboardScreen()));
             }),
-            _buildBottomNavItem(Icons.person, 'Profile', () {
+            _buildBottomNavItem(Icons.person, () {
               Navigator.of(context).pushReplacement(MaterialPageRoute(
                   builder: (context) => ProfileScreen(username: 'username')));
+            }),
+            _buildBottomNavItem(Icons.settings, () {
+              Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(builder: (context) => SettingsScreen()));
             }),
           ],
         ),
@@ -180,20 +203,18 @@ class _QuizHistoryScreenState extends State<QuizHistoryScreen> {
     ));
   }
 
-  Widget _buildBottomNavItem(
-      IconData icon, String label, VoidCallback onPressed) {
+  Widget _buildBottomNavItem(IconData icon, VoidCallback onPressed) {
     return Expanded(
       child: InkWell(
         onTap: onPressed,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: Colors.white),
-            Text(
-              label,
-              style: TextStyle(color: Colors.white, fontSize: 12),
-            ),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, color: Colors.white),
+            ],
+          ),
         ),
       ),
     );
@@ -213,6 +234,8 @@ class QuestionsReviewScreen extends StatelessWidget {
         title: const Text('Questions Review',
             style: TextStyle(color: Colors.white)),
         backgroundColor: Colors.deepPurple,
+        iconTheme: const IconThemeData(
+            color: Colors.white), // Ensuring the back button is white
       ),
       body: ListView.builder(
         itemCount: history.questions.length,
@@ -220,15 +243,24 @@ class QuestionsReviewScreen extends StatelessWidget {
           Question question = history.questions[index];
           String selectedAnswer =
               question.selectedAnswer ?? 'No answer selected';
-          return ListTile(
-            title: Text(question.text),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 4),
-                Text('Your Answer: $selectedAnswer'),
-                Text('Correct Answer: ${question.correctAnswer}'),
-              ],
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: ListTile(
+                title: Text(question.text),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 4),
+                    Text('Your Answer: $selectedAnswer'),
+                    Text('Correct Answer: ${question.correctAnswer}'),
+                  ],
+                ),
+              ),
             ),
           );
         },

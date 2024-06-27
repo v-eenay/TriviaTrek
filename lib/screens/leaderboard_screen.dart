@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:quiz_app_enrichment/models/user_model.dart';
 import 'package:quiz_app_enrichment/screens/categories_screen.dart';
 import 'package:quiz_app_enrichment/screens/highscores_screen.dart';
+import 'package:quiz_app_enrichment/screens/home_screen.dart';
 import 'package:quiz_app_enrichment/screens/profile_screen.dart';
+import 'package:quiz_app_enrichment/screens/quiz_history_screen.dart';
 import 'package:quiz_app_enrichment/screens/settings_screen.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 class LeaderboardScreen extends StatefulWidget {
   const LeaderboardScreen({Key? key}) : super(key: key);
@@ -74,7 +78,10 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Leaderboard'),
+        title: Text(
+          'Leaderboard',
+          style: TextStyle(color: Colors.white),
+        ),
         backgroundColor: Colors.deepPurple,
         elevation: 0,
         actions: [
@@ -130,27 +137,17 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            _buildBottomNavItem(Icons.home, 'Home', () {
-              Navigator.of(context).popUntil((route) => route.isFirst);
-            }),
-            _buildBottomNavItem(Icons.category, 'Categories', () {
-              Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(builder: (context) => CategoriesScreen()));
-            }),
-            _buildBottomNavItem(Icons.star, 'Highscores', () {
-              Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(builder: (context) => HighscoresScreen()));
-            }),
-            _buildBottomNavItem(Icons.settings, 'Settings', () {
-              Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(builder: (context) => SettingsScreen()));
-            }),
-            _buildBottomNavItem(Icons.person, 'Profile', () {
-              Navigator.of(context).pushReplacement(MaterialPageRoute(
-                  builder: (context) => ProfileScreen(
-                        username: username,
-                      )));
-            }),
+            _buildBottomNavItem(Icons.home, () => _navigateToHome(context)),
+            _buildBottomNavItem(
+                Icons.category, () => _navigateToCategories(context)),
+            _buildBottomNavItem(
+                Icons.star, () => _navigateToHighscores(context)),
+            _buildBottomNavItem(
+                Icons.history, () => _navigateToHistory(context)),
+            _buildBottomNavItem(
+                Icons.person, () => _navigateToProfile(context)),
+            _buildBottomNavItem(
+                Icons.settings, () => _navigateToSettings(context)),
           ],
         ),
       ),
@@ -182,6 +179,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
             style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
+              color: Colors.deepPurple,
             ),
           ),
           const SizedBox(height: 8),
@@ -214,26 +212,56 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
     );
   }
 
-  Widget _buildBottomNavItem(
-      IconData icon, String label, VoidCallback onPressed) {
-    return Expanded(
-      child: InkWell(
-        onTap: onPressed,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: Colors.white),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 12,
-              ),
-            ),
-          ],
-        ),
-      ),
+  Widget _buildBottomNavItem(IconData icon, VoidCallback onPressed) {
+    return IconButton(
+      icon: Icon(icon, color: Colors.white),
+      onPressed: onPressed,
     );
+  }
+
+  void _navigateToHome(BuildContext context) async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      DocumentSnapshot<Map<String, dynamic>> snapshot = await FirebaseFirestore
+          .instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+      UserModel userModel = UserModel(
+        userId: user.uid,
+        username: snapshot.data()?['username'] ?? '',
+        email: user.email ?? '',
+        name: snapshot.data()?['name'] ?? '',
+        dateOfBirth: snapshot.data()?['dateOfBirth'] ?? '',
+        address: snapshot.data()?['address'] ?? '',
+      );
+      Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => HomeScreen(user: userModel)));
+    }
+  }
+
+  void _navigateToCategories(BuildContext context) {
+    Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => CategoriesScreen()));
+  }
+
+  void _navigateToHighscores(BuildContext context) {
+    Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => HighscoresScreen()));
+  }
+
+  void _navigateToHistory(BuildContext context) {
+    Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => QuizHistoryScreen()));
+  }
+
+  void _navigateToProfile(BuildContext context) {
+    Navigator.of(context).pushReplacement(MaterialPageRoute(
+        builder: (context) => ProfileScreen(username: username)));
+  }
+
+  void _navigateToSettings(BuildContext context) {
+    Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => SettingsScreen()));
   }
 }
