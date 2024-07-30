@@ -43,6 +43,7 @@ dependencies:
   firebase_storage: ^11.7.7
   image_picker: ^1.1.2
   intl: ^0.19.0
+  flutter_dotenv: ^5.1.0
 
 dev_dependencies:
   flutter_test:
@@ -97,3 +98,4 @@ flutter:
   # see https://flutter.dev/custom-fonts/#from-packages
   assets:
     - assets/app_icon.png
+    - .env

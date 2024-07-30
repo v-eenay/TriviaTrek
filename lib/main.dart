@@ -1,23 +1,50 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
 import 'models/user_model.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'dart:html' as html;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: FirebaseOptions(
-      apiKey: "AIzaSyCyfYaHkU9-trDt7pWBrI3vPvgLbl57AmQ",
-      authDomain: "enrichmentquizapp.firebaseapp.com",
-      projectId: "enrichmentquizapp",
-      storageBucket: "enrichmentquizapp.appspot.com",
-      messagingSenderId: "941720131416",
-      appId: "1:941720131416:android:244ae946be78242c60772d",
-      measurementId: "",
-    ),
-  );
+
+  try {
+    if (kIsWeb) {
+      // Web-specific initialization
+      await Firebase.initializeApp(
+        options: FirebaseOptions(
+          apiKey: html.window.localStorage['API_KEY'] ?? '',
+          authDomain: html.window.localStorage['AUTH_DOMAIN'] ?? '',
+          projectId: html.window.localStorage['PROJECT_ID'] ?? '',
+          storageBucket: html.window.localStorage['STORAGE_BUCKET'] ?? '',
+          messagingSenderId:
+              html.window.localStorage['MESSAGING_SENDER_ID'] ?? '',
+          appId: html.window.localStorage['APP_ID'] ?? '',
+          measurementId: html.window.localStorage['MEASUREMENT_ID'] ?? '',
+        ),
+      );
+    } else {
+      // Non-web initialization
+      await dotenv.load(fileName: ".env");
+      await Firebase.initializeApp(
+        options: FirebaseOptions(
+          apiKey: dotenv.env['API_KEY']!,
+          authDomain: dotenv.env['AUTH_DOMAIN']!,
+          projectId: dotenv.env['PROJECT_ID']!,
+          storageBucket: dotenv.env['STORAGE_BUCKET']!,
+          messagingSenderId: dotenv.env['MESSAGING_SENDER_ID']!,
+          appId: dotenv.env['APP_ID']!,
+          measurementId: dotenv.env['MEASUREMENT_ID']!,
+        ),
+      );
+    }
+  } catch (e) {
+    print('Firebase initialization error: $e');
+  }
+
   runApp(const QuizApp());
 }
 
